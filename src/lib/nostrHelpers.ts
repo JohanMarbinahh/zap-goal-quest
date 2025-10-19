@@ -21,54 +21,72 @@ export function parseProfile(event: NDKEvent): Profile | null {
 
 export function parseGoal9041(event: NDKEvent): Goal9041 | null {
   try {
-    // d tag is required for kind 9041 events
-    const dTag = event.tags.find((t) => t[0] === 'd')?.[1];
-    if (!dTag) {
-      console.warn('Goal event missing d tag:', event.id);
-      return null;
-    }
+    // d tag is preferred but not required - use event ID as fallback
+    const dTag = event.tags.find((t) => t[0] === 'd')?.[1] || event.id;
 
-    // Parse target from tags - be flexible with tag names
+    // Parse target from tags - be very flexible with tag names
     const goalTag = event.tags.find((t) => t[0] === 'goal');
     const amountTag = event.tags.find((t) => t[0] === 'amount');
-    const relaysTag = event.tags.find((t) => t[0] === 'relays');
     const closedTag = event.tags.find((t) => t[0] === 'closed_at');
+    const zapSplitTag = event.tags.find((t) => t[0] === 'zap_split');
     
     let targetSats = 0;
-    if (goalTag && goalTag[1] === 'sats') {
-      targetSats = parseInt(goalTag[2] || '0', 10);
-    } else if (amountTag) {
-      // Amount might be in msats or sats
-      const amount = parseInt(amountTag[1] || '0', 10);
+    
+    // Try multiple ways to get target amount
+    if (goalTag && goalTag[1] === 'sats' && goalTag[2]) {
+      targetSats = parseInt(goalTag[2], 10);
+    } else if (amountTag && amountTag[1]) {
+      const amount = parseInt(amountTag[1], 10);
+      // Handle msats (amounts > 1M are likely msats)
       targetSats = amount > 1000000 ? Math.floor(amount / 1000) : amount;
+    } else if (goalTag && goalTag[1]) {
+      // Sometimes the amount is directly in goalTag[1]
+      const amount = parseInt(goalTag[1], 10);
+      if (!isNaN(amount)) {
+        targetSats = amount > 1000000 ? Math.floor(amount / 1000) : amount;
+      }
+    }
+    
+    // If still no target, set a default
+    if (!targetSats || isNaN(targetSats)) {
+      targetSats = 10000; // Default 10k sats
     }
 
-    // Try to parse content as JSON for additional metadata
+    // Try to parse content for metadata
     let title = '';
     let imageUrl = '';
     let status = closedTag ? 'closed' : 'active';
     
     try {
       const content = JSON.parse(event.content);
-      title = content.title || content.name || content.description || '';
+      title = content.title || content.name || content.description || content.summary || '';
       imageUrl = content.image || content.imageUrl || content.picture || '';
       status = content.status || status;
     } catch {
-      // If content is not JSON, use it as title
-      title = event.content || 'Untitled Goal';
+      // If content is not JSON, use it as title (clean it up)
+      title = event.content?.trim() || '';
     }
 
-    // If still no title, generate one from the goal ID
-    if (!title || title === 'Untitled Goal') {
-      title = `Goal: ${dTag.substring(0, 20)}${dTag.length > 20 ? '...' : ''}`;
+    // If still no title, generate one from tags or content
+    if (!title) {
+      // Check for name or title in tags
+      const nameTag = event.tags.find((t) => t[0] === 'name' || t[0] === 'title')?.[1];
+      if (nameTag) {
+        title = nameTag;
+      } else if (dTag !== event.id) {
+        // Use d tag if it looks like a readable title
+        title = dTag.length < 50 ? dTag : `Goal ${dTag.substring(0, 15)}...`;
+      } else {
+        title = `Fundraiser ${event.id.substring(0, 8)}`;
+      }
     }
 
     return {
       eventId: event.id,
       goalId: dTag,
       authorPubkey: event.pubkey,
-      title,
-      name: title,
+      title: title.substring(0, 200), // Limit title length
+      name: title.substring(0, 200),
       targetSats,
       status,
       createdAt: event.created_at || Date.now() / 1000,
