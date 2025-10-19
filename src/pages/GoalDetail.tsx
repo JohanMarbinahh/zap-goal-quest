@@ -1,4 +1,4 @@
-import { useParams, Link } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom';
 import { useState } from 'react';
 import { ArrowLeft, Zap, ThumbsUp, Calendar, Target, Hash, Info } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -15,6 +15,7 @@ import { formatSats, formatRelativeTime } from '@/lib/nostrHelpers';
 
 const GoalDetail = () => {
   const { id } = useParams<{ id: string }>();
+  const navigate = useNavigate();
   const [excludeSelfZaps, setExcludeSelfZaps] = useState(true);
   
   const goal = useAppSelector((state) => id ? state.goals.goals[id] : undefined);
@@ -56,12 +57,10 @@ const GoalDetail = () => {
           <p className="text-muted-foreground mb-6">
             This goal may not exist or hasn't been loaded yet.
           </p>
-          <Link to="/">
-            <Button>
-              <ArrowLeft className="w-4 h-4 mr-2" />
-              Back to Dashboard
-            </Button>
-          </Link>
+          <Button onClick={() => navigate('/')}>
+            <ArrowLeft className="w-4 h-4 mr-2" />
+            Back to Dashboard
+          </Button>
         </div>
       </main>
     );
@@ -76,12 +75,10 @@ const GoalDetail = () => {
   return (
     <main className="container mx-auto px-4 py-8">
       <div className="max-w-6xl mx-auto">
-        <Link to="/">
-          <Button variant="ghost" className="mb-6 gap-2">
-            <ArrowLeft className="w-4 h-4" />
-            Back to Goals
-          </Button>
-        </Link>
+        <Button variant="ghost" className="mb-6 gap-2" onClick={() => navigate(-1)}>
+          <ArrowLeft className="w-4 h-4" />
+          Back to Goals
+        </Button>
 
         {/* Hero Section */}
         <div className="grid md:grid-cols-2 gap-8 mb-8">
