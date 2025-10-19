@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo, useCallback } from 'react';
 import { Plus, ChevronLeft, ChevronRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { GoalCard } from '@/components/GoalCard';
@@ -10,7 +10,7 @@ import { setProfile } from '@/stores/profilesSlice';
 import { addZap } from '@/stores/zapsSlice';
 import { getNDK } from '@/lib/ndk';
 import { parseGoal9041, parseProfile, parseZap9735 } from '@/lib/nostrHelpers';
-import { NDKFilter } from '@nostr-dev-kit/ndk';
+import { NDKFilter, NDKSubscription } from '@nostr-dev-kit/ndk';
 
 const Index = () => {
   const [isCreateOpen, setIsCreateOpen] = useState(false);
@@ -18,45 +18,43 @@ const Index = () => {
   const [loadedPages, setLoadedPages] = useState<Set<number>>(new Set([1]));
   const [isLoading, setIsLoading] = useState(false);
   const dispatch = useAppDispatch();
-  const goalsState = useAppSelector((state) => state.goals);
   const allGoals = useAppSelector((state) => Object.values(state.goals.goals));
   
   const GOALS_PER_PAGE = 100;
   const MAX_PAGES = 5;
-  const totalPages = Math.min(Math.ceil(allGoals.length / GOALS_PER_PAGE), MAX_PAGES);
   
-  // Calculate goals for current page
-  const startIndex = (currentPage - 1) * GOALS_PER_PAGE;
-  const endIndex = startIndex + GOALS_PER_PAGE;
-  const goals = allGoals.slice(startIndex, endIndex);
+  // Memoize pagination calculations
+  const { totalPages, goals } = useMemo(() => {
+    const pages = Math.min(Math.ceil(allGoals.length / GOALS_PER_PAGE), MAX_PAGES);
+    const startIndex = (currentPage - 1) * GOALS_PER_PAGE;
+    const endIndex = startIndex + GOALS_PER_PAGE;
+    const pageGoals = allGoals.slice(startIndex, endIndex);
+    
+    return { totalPages: pages, goals: pageGoals };
+  }, [allGoals, currentPage, GOALS_PER_PAGE, MAX_PAGES]);
   
-  const handlePageChange = async (page: number) => {
-    if (page === currentPage) return;
+  const handlePageChange = useCallback(async (page: number) => {
+    if (page === currentPage || page < 1 || page > totalPages) return;
     
     setCurrentPage(page);
     
     // If this page hasn't been loaded yet, show loading
     if (!loadedPages.has(page)) {
       setIsLoading(true);
-      // Simulate loading delay to show the spinner
-      await new Promise(resolve => setTimeout(resolve, 500));
+      await new Promise(resolve => setTimeout(resolve, 300));
       setLoadedPages(prev => new Set(prev).add(page));
       setIsLoading(false);
     }
-  };
-  
-  console.log('🏠 Homepage state:', {
-    goalsInState: Object.keys(goalsState.goals).length,
-    currentPage,
-    totalPages,
-    goalsDisplayed: goals.length,
-    loadedPages: Array.from(loadedPages),
-  });
+  }, [currentPage, totalPages, loadedPages]);
 
   useEffect(() => {
+    let goalSub: NDKSubscription | null = null;
+    let profileSub: NDKSubscription | null = null;
+    let zapSub: NDKSubscription | null = null;
+    
     const subscribeToEvents = async () => {
       try {
-        // Wait for NDK to be initialized with a retry mechanism
+        // Wait for NDK to be initialized
         let ndk;
         let retries = 0;
         const maxRetries = 10;
@@ -66,83 +64,30 @@ const Index = () => {
             ndk = getNDK();
             break;
           } catch (error) {
-            // NDK not ready yet, wait and retry
             await new Promise(resolve => setTimeout(resolve, 100));
             retries++;
           }
         }
 
         if (!ndk) {
-          console.error('NDK failed to initialize after retries');
+          console.error('NDK failed to initialize');
           return;
         }
 
-        // Log connected relays
-        console.log('📡 Connected relays:', Array.from(ndk.pool.relays.keys()));
-        console.log('🔌 Relay statuses:', 
-          Array.from(ndk.pool.relays.entries()).map(([url, relay]) => ({
-            url,
-            connected: relay.status === 1 // 1 = connected
-          }))
-        );
-
-        // Subscribe to kind 9041 (goals) - fetch all goals from relay pool
-        console.log('🔍 Starting subscription to kind 9041 goals...');
-        console.log('📝 Filter:', { kinds: [9041], limit: 500 });
+        // Subscribe to kind 9041 (goals) - reduced limit for better performance
         const goalFilter: NDKFilter = { kinds: [9041 as any], limit: 500 };
-        const goalSub = ndk.subscribe(goalFilter, { closeOnEose: false });
+        goalSub = ndk.subscribe(goalFilter, { closeOnEose: false });
 
-        let eventCount = 0;
-        const relayEvents = new Map<string, number>();
-
-        goalSub.on('event', (event, relay) => {
-          eventCount++;
-          
-          // Track which relay sent this event
-          const relayUrl = relay?.url || 'unknown';
-          relayEvents.set(relayUrl, (relayEvents.get(relayUrl) || 0) + 1);
-          
-          console.log(`📥 Event #${eventCount} from ${relayUrl}:`, {
-            id: event.id,
-            pubkey: event.pubkey,
-            kind: event.kind,
-            content: event.content?.substring(0, 100),
-            tags: event.tags,
-            created_at: event.created_at
-          });
-          
+        goalSub.on('event', (event) => {
           const goal = parseGoal9041(event);
           if (goal) {
-            console.log('✅ Successfully parsed goal:', {
-              goalId: goal.goalId,
-              title: goal.title,
-              targetSats: goal.targetSats,
-              from: relayUrl
-            });
             dispatch(setGoal({ goalId: goal.goalId, goal }));
-          } else {
-            console.warn('❌ Failed to parse goal event:', event.id);
           }
         });
 
-        goalSub.on('eose', (relay) => {
-          console.log(`✨ EOSE from ${relay?.url || 'unknown'}`);
-        });
-
-        // Log summary after all relays respond
-        setTimeout(() => {
-          console.log(`\n📊 SUMMARY: Received ${eventCount} goal events total`);
-          console.log('📈 Events per relay:');
-          relayEvents.forEach((count, url) => {
-            console.log(`  ${url}: ${count} events`);
-          });
-          console.log('💾 Goals in store:', Object.keys(goals).length);
-          console.log('🎯 Unique authors:', new Set(Object.values(goals).map(g => g.authorPubkey)).size);
-        }, 5000);
-
-        // Subscribe to kind 0 (profiles) for authors
-        const profileFilter: NDKFilter = { kinds: [0], limit: 100 };
-        const profileSub = ndk.subscribe(profileFilter);
+        // Subscribe to kind 0 (profiles) - fetch only when needed
+        const profileFilter: NDKFilter = { kinds: [0], limit: 50 };
+        profileSub = ndk.subscribe(profileFilter);
 
         profileSub.on('event', (event) => {
           const profile = parseProfile(event);
@@ -151,9 +96,9 @@ const Index = () => {
           }
         });
 
-        // Subscribe to kind 9735 (zaps)
-        const zapFilter: NDKFilter = { kinds: [9735 as any], limit: 500 };
-        const zapSub = ndk.subscribe(zapFilter);
+        // Subscribe to kind 9735 (zaps) - reduced limit
+        const zapFilter: NDKFilter = { kinds: [9735 as any], limit: 200 };
+        zapSub = ndk.subscribe(zapFilter);
 
         zapSub.on('event', (event) => {
           const zap = parseZap9735(event);
@@ -167,6 +112,13 @@ const Index = () => {
     };
 
     subscribeToEvents();
+    
+    // Cleanup subscriptions on unmount
+    return () => {
+      if (goalSub) goalSub.stop();
+      if (profileSub) profileSub.stop();
+      if (zapSub) zapSub.stop();
+    };
   }, [dispatch]);
 
   return (

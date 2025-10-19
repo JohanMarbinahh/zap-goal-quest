@@ -1,3 +1,4 @@
+import { memo, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import { ExternalLink, Zap } from 'lucide-react';
 import { Card, CardContent, CardFooter, CardHeader } from '@/components/ui/card';
@@ -13,11 +14,16 @@ interface GoalCardProps {
   goal: Goal9041;
 }
 
-export const GoalCard = ({ goal }: GoalCardProps) => {
+export const GoalCard = memo(({ goal }: GoalCardProps) => {
   const profile = useAppSelector((state) => state.profiles.profiles[goal.authorPubkey]);
   const zaps = useAppSelector((state) => state.zaps.zapsByGoal[goal.eventId] || []);
-  const raised = zaps.reduce((sum, zap) => sum + Math.floor(zap.amountMsat / 1000), 0);
-  const progress = Math.min((raised / goal.targetSats) * 100, 100);
+  
+  // Memoize expensive calculations
+  const { raised, progress } = useMemo(() => {
+    const totalRaised = zaps.reduce((sum, zap) => sum + Math.floor(zap.amountMsat / 1000), 0);
+    const progressPercent = Math.min((totalRaised / goal.targetSats) * 100, 100);
+    return { raised: totalRaised, progress: progressPercent };
+  }, [zaps, goal.targetSats]);
 
   const handleFund = () => {
     if (profile?.lud16) {
@@ -90,4 +96,6 @@ export const GoalCard = ({ goal }: GoalCardProps) => {
       </CardFooter>
     </Card>
   );
-};
+});
+
+GoalCard.displayName = 'GoalCard';

@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { Plus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { GoalCard } from '@/components/GoalCard';
@@ -13,41 +13,40 @@ import { NDKFilter } from '@nostr-dev-kit/ndk';
 const MyGoals = () => {
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const dispatch = useAppDispatch();
-  const goals = useAppSelector((state) => Object.values(state.goals.goals));
+  const allGoals = useAppSelector((state) => Object.values(state.goals.goals));
   const pubkey = useAppSelector((state) => state.auth.pubkey);
   const profile = useAppSelector((state) => pubkey ? state.profiles.profiles[pubkey] : null);
   
-  const myGoals = goals.filter((goal) => goal.authorPubkey === pubkey);
+  // Memoize filtered goals
+  const myGoals = useMemo(() => 
+    allGoals.filter((goal) => goal.authorPubkey === pubkey),
+    [allGoals, pubkey]
+  );
 
   useEffect(() => {
     const fetchProfile = async () => {
-      if (!pubkey) return;
+      if (!pubkey || profile) return; // Don't fetch if already have profile
 
       try {
         const ndk = getNDK();
-        console.log('🔍 Fetching profile for:', pubkey);
-        
-        const profileFilter: NDKFilter = { kinds: [0], authors: [pubkey] };
+        const profileFilter: NDKFilter = { kinds: [0], authors: [pubkey], limit: 1 };
         const events = await ndk.fetchEvents(profileFilter);
-        
-        console.log('📥 Received profile events:', events.size);
         
         if (events.size > 0) {
           const event = Array.from(events)[0];
           const parsedProfile = parseProfile(event);
           
           if (parsedProfile) {
-            console.log('✅ Profile parsed:', parsedProfile);
             dispatch(setProfile({ pubkey, profile: parsedProfile }));
           }
         }
       } catch (error) {
-        console.error('❌ Error fetching profile:', error);
+        console.error('Error fetching profile:', error);
       }
     };
 
     fetchProfile();
-  }, [pubkey, dispatch]);
+  }, [pubkey, dispatch, profile]);
 
   return (
     <main className="container mx-auto px-4 py-8">
