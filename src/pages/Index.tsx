@@ -1,4 +1,5 @@
 import { useEffect, useState, useMemo, useCallback } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { Plus, ChevronLeft, ChevronRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Spinner } from '@/components/ui/spinner';
@@ -14,8 +15,9 @@ import { parseGoal9041, parseProfile, parseZap9735 } from '@/lib/nostrHelpers';
 import { NDKFilter, NDKSubscription } from '@nostr-dev-kit/ndk';
 
 const Index = () => {
+  const [searchParams, setSearchParams] = useSearchParams();
   const [isCreateOpen, setIsCreateOpen] = useState(false);
-  const [currentPage, setCurrentPage] = useState(1);
+  const currentPage = parseInt(searchParams.get('page') || '1', 10);
   const dispatch = useAppDispatch();
   const allGoals = useAppSelector(selectEnrichedGoals);
   
@@ -37,8 +39,8 @@ const Index = () => {
   
   const handlePageChange = useCallback((page: number) => {
     if (page === currentPage || page < 1 || page > totalPages) return;
-    setCurrentPage(page);
-  }, [currentPage, totalPages]);
+    setSearchParams({ page: page.toString() });
+  }, [currentPage, totalPages, setSearchParams]);
 
   useEffect(() => {
     // Skip if already subscribed
