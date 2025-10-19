@@ -1,10 +1,11 @@
 import { memo, useMemo, useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { Zap, ChevronDown, ChevronUp } from 'lucide-react';
 import { Card, CardContent, CardFooter, CardHeader } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Skeleton } from '@/components/ui/skeleton';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Goal9041 } from '@/types/nostr';
 import { useAppSelector } from '@/stores/hooks';
@@ -17,6 +18,7 @@ interface GoalCardProps {
 
 export const GoalCard = memo(({ goal }: GoalCardProps) => {
   const [isExpanded, setIsExpanded] = useState(false);
+  const [imageLoaded, setImageLoaded] = useState(false);
   const navigate = useNavigate();
   const profile = useAppSelector((state) => state.profiles.profiles[goal.authorPubkey]);
   const zaps = useAppSelector((state) => state.zaps.zapsByGoal[goal.eventId] || []);
@@ -52,11 +54,15 @@ export const GoalCard = memo(({ goal }: GoalCardProps) => {
       onClick={handleCardClick}
     >
       {goal.imageUrl && (
-        <div className="aspect-video overflow-hidden bg-muted">
+        <div className="aspect-video overflow-hidden bg-muted relative">
+          {!imageLoaded && (
+            <Skeleton className="absolute inset-0 w-full h-full" />
+          )}
           <img
             src={goal.imageUrl}
             alt={goal.title || goal.name}
-            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+            className={`w-full h-full object-cover group-hover:scale-105 transition-transform duration-300 ${!imageLoaded ? 'opacity-0' : 'opacity-100'}`}
+            onLoad={() => setImageLoaded(true)}
           />
         </div>
       )}
@@ -70,18 +76,26 @@ export const GoalCard = memo(({ goal }: GoalCardProps) => {
             </AvatarFallback>
           </Avatar>
           <div className="flex-1 min-w-0">
-            <h3 className="font-semibold text-lg leading-tight truncate">
-              {goal.title || goal.name || 'Untitled Goal'}
-            </h3>
-            <p className="text-sm text-muted-foreground">
-              by {profile?.displayName || profile?.name || shortNpub(goal.authorPubkey)}
-            </p>
+            {goal.title || goal.name ? (
+              <h3 className="font-semibold text-lg leading-tight truncate">
+                {goal.title || goal.name}
+              </h3>
+            ) : (
+              <Skeleton className="h-6 w-3/4 mb-2" />
+            )}
+            {profile ? (
+              <p className="text-sm text-muted-foreground">
+                by {profile?.displayName || profile?.name || shortNpub(goal.authorPubkey)}
+              </p>
+            ) : (
+              <Skeleton className="h-4 w-1/2" />
+            )}
           </div>
         </div>
       </CardHeader>
 
       <CardContent className="space-y-4">
-        {hasSummary && (
+        {hasSummary ? (
           <div className="space-y-2">
             <div 
               className={`text-sm text-muted-foreground ${!isExpanded ? 'line-clamp-2' : ''}`}
@@ -100,6 +114,11 @@ export const GoalCard = memo(({ goal }: GoalCardProps) => {
                 )}
               </button>
             )}
+          </div>
+        ) : (
+          <div className="space-y-2">
+            <Skeleton className="h-4 w-full" />
+            <Skeleton className="h-4 w-5/6" />
           </div>
         )}
         
