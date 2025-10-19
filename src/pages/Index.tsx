@@ -15,11 +15,11 @@ import { NDKFilter, NDKSubscription } from '@nostr-dev-kit/ndk';
 const Index = () => {
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
-  const [loadedPages, setLoadedPages] = useState<Set<number>>(new Set([1]));
-  const [isLoading, setIsLoading] = useState(false);
-  const [initialLoading, setInitialLoading] = useState(true);
   const dispatch = useAppDispatch();
   const allGoals = useAppSelector((state) => Object.values(state.goals.goals));
+  
+  // Initialize loading state based on whether we already have goals
+  const [initialLoading, setInitialLoading] = useState(allGoals.length === 0);
   
   const GOALS_PER_PAGE = 30;
   const MAX_PAGES = 5;
@@ -34,19 +34,10 @@ const Index = () => {
     return { totalPages: pages, goals: pageGoals };
   }, [allGoals, currentPage, GOALS_PER_PAGE, MAX_PAGES]);
   
-  const handlePageChange = useCallback(async (page: number) => {
+  const handlePageChange = useCallback((page: number) => {
     if (page === currentPage || page < 1 || page > totalPages) return;
-    
     setCurrentPage(page);
-    
-    // If this page hasn't been loaded yet, show loading
-    if (!loadedPages.has(page)) {
-      setIsLoading(true);
-      await new Promise(resolve => setTimeout(resolve, 300));
-      setLoadedPages(prev => new Set(prev).add(page));
-      setIsLoading(false);
-    }
-  }, [currentPage, totalPages, loadedPages]);
+  }, [currentPage, totalPages]);
 
   useEffect(() => {
     // Skip if already subscribed
@@ -184,7 +175,7 @@ const Index = () => {
                   variant="outline"
                   size="icon"
                   onClick={() => handlePageChange(currentPage - 1)}
-                  disabled={currentPage === 1 || isLoading}
+                  disabled={currentPage === 1}
                 >
                   <ChevronLeft className="w-4 h-4" />
                 </Button>
@@ -194,7 +185,6 @@ const Index = () => {
                     key={page}
                     variant={currentPage === page ? "default" : "outline"}
                     onClick={() => handlePageChange(page)}
-                    disabled={isLoading}
                     className="w-10"
                   >
                     {page}
@@ -205,7 +195,7 @@ const Index = () => {
                   variant="outline"
                   size="icon"
                   onClick={() => handlePageChange(currentPage + 1)}
-                  disabled={currentPage === totalPages || isLoading}
+                  disabled={currentPage === totalPages}
                 >
                   <ChevronRight className="w-4 h-4" />
                 </Button>
