@@ -1,4 +1,4 @@
-import { memo, useMemo, useState } from 'react';
+import { memo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Zap, ChevronDown, ChevronUp } from 'lucide-react';
 import { Card, CardContent, CardFooter, CardHeader } from '@/components/ui/card';
@@ -6,27 +6,18 @@ import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import { Goal9041 } from '@/types/nostr';
-import { useAppSelector } from '@/stores/hooks';
+import { EnrichedGoal } from '@/stores/selectors';
 import { shortNpub } from '@/lib/ndk';
 import { formatSats } from '@/lib/nostrHelpers';
 
 interface GoalCardProps {
-  goal: Goal9041;
+  goal: EnrichedGoal;
 }
 
 export const GoalCard = memo(({ goal }: GoalCardProps) => {
   const [isExpanded, setIsExpanded] = useState(false);
   const navigate = useNavigate();
-  const profile = useAppSelector((state) => state.profiles.profiles[goal.authorPubkey]);
-  const zaps = useAppSelector((state) => state.zaps.zapsByGoal[goal.eventId] || []);
-  
-  // Memoize expensive calculations
-  const { raised, progress } = useMemo(() => {
-    const totalRaised = zaps.reduce((sum, zap) => sum + Math.floor(zap.amountMsat / 1000), 0);
-    const progressPercent = Math.min((totalRaised / goal.targetSats) * 100, 100);
-    return { raised: totalRaised, progress: progressPercent };
-  }, [zaps, goal.targetSats]);
+  const { profile, raised, progress } = goal;
 
   const handleFund = (e: React.MouseEvent) => {
     e.stopPropagation();

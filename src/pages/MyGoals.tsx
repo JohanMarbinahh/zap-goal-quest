@@ -5,6 +5,7 @@ import { GoalCard } from '@/components/GoalCard';
 import { CreateGoalDialog } from '@/components/CreateGoalDialog';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { useAppSelector, useAppDispatch } from '@/stores/hooks';
+import { selectEnrichedGoals } from '@/stores/selectors';
 import { getNDK } from '@/lib/ndk';
 import { parseProfile } from '@/lib/nostrHelpers';
 import { setProfile } from '@/stores/profilesSlice';
@@ -13,7 +14,7 @@ import { NDKFilter } from '@nostr-dev-kit/ndk';
 const MyGoals = () => {
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const dispatch = useAppDispatch();
-  const allGoals = useAppSelector((state) => Object.values(state.goals.goals));
+  const allGoals = useAppSelector(selectEnrichedGoals);
   const pubkey = useAppSelector((state) => state.auth.pubkey);
   const profile = useAppSelector((state) => pubkey ? state.profiles.profiles[pubkey] : null);
   

@@ -8,6 +8,7 @@ import { useAppDispatch, useAppSelector } from '@/stores/hooks';
 import { setGoal } from '@/stores/goalsSlice';
 import { setProfile } from '@/stores/profilesSlice';
 import { addZap } from '@/stores/zapsSlice';
+import { selectEnrichedGoals } from '@/stores/selectors';
 import { getNDK } from '@/lib/ndk';
 import { parseGoal9041, parseProfile, parseZap9735 } from '@/lib/nostrHelpers';
 import { NDKFilter, NDKSubscription } from '@nostr-dev-kit/ndk';
@@ -16,7 +17,7 @@ const Index = () => {
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const dispatch = useAppDispatch();
-  const allGoals = useAppSelector((state) => Object.values(state.goals.goals));
+  const allGoals = useAppSelector(selectEnrichedGoals);
   
   // Initialize loading state based on whether we already have goals
   const [initialLoading, setInitialLoading] = useState(allGoals.length === 0);
