@@ -14,21 +14,18 @@ import { NDKFilter } from '@nostr-dev-kit/ndk';
 const Index = () => {
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const dispatch = useAppDispatch();
+  const goalsState = useAppSelector((state) => state.goals);
   const allGoals = useAppSelector((state) => Object.values(state.goals.goals));
   const currentUserPubkey = useAppSelector((state) => state.auth.pubkey);
   
-  // Show ALL goals on homepage, not filtered
+  // Show ALL goals on homepage
   const goals = allGoals;
   
-  console.log('🏠 Homepage rendering:', {
-    totalGoals: goals.length,
-    currentUser: currentUserPubkey?.substring(0, 8),
-    uniqueAuthors: new Set(goals.map(g => g.authorPubkey)).size,
-    goalsByAuthor: goals.reduce((acc, g) => {
-      const key = g.authorPubkey.substring(0, 8);
-      acc[key] = (acc[key] || 0) + 1;
-      return acc;
-    }, {} as Record<string, number>)
+  console.log('🏠 Homepage state:', {
+    goalsInState: Object.keys(goalsState.goals).length,
+    goalsArray: goals.length,
+    goalIds: Object.keys(goalsState.goals),
+    firstGoal: goals[0],
   });
 
   useEffect(() => {
