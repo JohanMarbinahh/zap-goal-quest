@@ -1,0 +1,183 @@
+import { useState } from 'react';
+import { Plus, Trash2, Copy, Check } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Badge } from '@/components/ui/badge';
+import { useRelaysStore } from '@/stores/relaysStore';
+import { useAuthStore } from '@/stores/authStore';
+import { toast } from '@/hooks/use-toast';
+
+const Settings = () => {
+  const [newRelay, setNewRelay] = useState('');
+  const [copiedNpub, setCopiedNpub] = useState(false);
+  const { relays, relayStatuses, addRelay, removeRelay } = useRelaysStore();
+  const { npub, isNip07 } = useAuthStore();
+
+  const handleAddRelay = () => {
+    if (!newRelay) return;
+    
+    if (!newRelay.startsWith('wss://') && !newRelay.startsWith('ws://')) {
+      toast({
+        title: 'Invalid Relay URL',
+        description: 'Relay URL must start with wss:// or ws://',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    if (relays.includes(newRelay)) {
+      toast({
+        title: 'Duplicate Relay',
+        description: 'This relay is already in your list.',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    addRelay(newRelay);
+    setNewRelay('');
+    toast({
+      title: 'Relay Added',
+      description: 'Refresh the page to connect to the new relay.',
+    });
+  };
+
+  const handleRemoveRelay = (url: string) => {
+    removeRelay(url);
+    toast({
+      title: 'Relay Removed',
+      description: 'Refresh the page to disconnect from this relay.',
+    });
+  };
+
+  const handleCopyNpub = async () => {
+    if (!npub) return;
+    await navigator.clipboard.writeText(npub);
+    setCopiedNpub(true);
+    setTimeout(() => setCopiedNpub(false), 2000);
+    toast({
+      title: 'Copied!',
+      description: 'Your npub has been copied to clipboard.',
+    });
+  };
+
+  return (
+    <main className="container mx-auto px-4 py-8">
+      <div className="max-w-4xl mx-auto space-y-8">
+        <div>
+          <h1 className="text-4xl font-bold mb-2 bg-gradient-to-r from-primary to-primary-glow bg-clip-text text-transparent">
+            Settings
+          </h1>
+          <p className="text-muted-foreground">
+            Manage your relays and account settings
+          </p>
+        </div>
+
+        {/* Account Info */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Account</CardTitle>
+            <CardDescription>Your Nostr identity and authentication</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="space-y-2">
+              <Label>Public Key (npub)</Label>
+              <div className="flex gap-2">
+                <Input value={npub || ''} readOnly className="font-mono text-sm" />
+                <Button
+                  variant="outline"
+                  size="icon"
+                  onClick={handleCopyNpub}
+                  disabled={!npub}
+                >
+                  {copiedNpub ? (
+                    <Check className="w-4 h-4 text-success" />
+                  ) : (
+                    <Copy className="w-4 h-4" />
+                  )}
+                </Button>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-2">
+              <Label>Authentication Method:</Label>
+              <Badge variant={isNip07 ? 'default' : 'secondary'}>
+                {isNip07 ? 'NIP-07 (Browser Extension)' : 'Ephemeral Key (Local)'}
+              </Badge>
+            </div>
+
+            {!isNip07 && (
+              <p className="text-sm text-muted-foreground">
+                You're using a temporary key stored in your browser. Install a Nostr browser
+                extension like Alby or nos2x for persistent identity.
+              </p>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* Relay Management */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Relay Management</CardTitle>
+            <CardDescription>
+              Configure which Nostr relays to connect to
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="flex gap-2">
+              <Input
+                placeholder="wss://relay.example.com"
+                value={newRelay}
+                onChange={(e) => setNewRelay(e.target.value)}
+                onKeyDown={(e) => e.key === 'Enter' && handleAddRelay()}
+              />
+              <Button onClick={handleAddRelay} className="gap-2 shrink-0">
+                <Plus className="w-4 h-4" />
+                Add
+              </Button>
+            </div>
+
+            <div className="space-y-2">
+              {relays.map((relay) => {
+                const status = relayStatuses.find((r) => r.url === relay);
+                const isConnected = status?.connected || false;
+
+                return (
+                  <div
+                    key={relay}
+                    className="flex items-center justify-between p-3 rounded-lg bg-secondary/50 hover:bg-secondary transition-colors"
+                  >
+                    <div className="flex items-center gap-3 flex-1 min-w-0">
+                      <div
+                        className={`w-2 h-2 rounded-full shrink-0 ${
+                          isConnected ? 'bg-success' : 'bg-destructive'
+                        }`}
+                      />
+                      <span className="font-mono text-sm truncate">{relay}</span>
+                    </div>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => handleRemoveRelay(relay)}
+                      className="shrink-0"
+                    >
+                      <Trash2 className="w-4 h-4 text-destructive" />
+                    </Button>
+                  </div>
+                );
+              })}
+            </div>
+
+            <p className="text-sm text-muted-foreground">
+              Note: Changes to relays require a page refresh to take effect.
+            </p>
+          </CardContent>
+        </Card>
+      </div>
+    </main>
+  );
+};
+
+export default Settings;
