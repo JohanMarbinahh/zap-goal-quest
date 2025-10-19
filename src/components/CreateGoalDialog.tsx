@@ -19,6 +19,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import { toast } from '@/hooks/use-toast';
 import { getNDK, publishEvent } from '@/lib/ndk';
 import { useAppDispatch } from '@/stores/hooks';
 import { setGoal } from '@/stores/goalsSlice';
@@ -47,6 +48,11 @@ export const CreateGoalDialog = ({ open, onOpenChange }: CreateGoalDialogProps) 
       const target = parseInt(targetSats, 10);
 
       if (!title || isNaN(target) || target <= 0) {
+        toast({
+          title: 'Validation Error',
+          description: 'Please provide a valid title and target amount.',
+          variant: 'destructive',
+        });
         return;
       }
 
@@ -73,6 +79,11 @@ export const CreateGoalDialog = ({ open, onOpenChange }: CreateGoalDialogProps) 
         dispatch(setGoal({ goalId: goal.goalId, goal }));
       }
 
+      toast({
+        title: 'Goal Created!',
+        description: 'Your fundraising goal has been published to Nostr.',
+      });
+
       // Reset form
       setTitle('');
       setTargetSats('');
@@ -81,6 +92,11 @@ export const CreateGoalDialog = ({ open, onOpenChange }: CreateGoalDialogProps) 
       onOpenChange(false);
     } catch (error) {
       console.error('Failed to create goal:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to create goal. Please try again.',
+        variant: 'destructive',
+      });
     } finally {
       setIsLoading(false);
     }
