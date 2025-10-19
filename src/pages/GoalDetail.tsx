@@ -1,12 +1,14 @@
 import { useParams, Link } from 'react-router-dom';
 import { useState } from 'react';
-import { ArrowLeft, Zap, ThumbsUp } from 'lucide-react';
+import { ArrowLeft, Zap, ThumbsUp, Calendar, Target, Hash, Info } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
+import { Badge } from '@/components/ui/badge';
+import { Separator } from '@/components/ui/separator';
 import { useAppSelector } from '@/stores/hooks';
 import { shortNpub } from '@/lib/ndk';
 import { formatSats, formatRelativeTime } from '@/lib/nostrHelpers';
@@ -93,20 +95,91 @@ const GoalDetail = () => {
                 />
               </div>
             )}
-            <div className="flex items-center gap-3 mb-4">
-              <Avatar className="w-12 h-12 border-2 border-primary/20">
-                <AvatarImage src={profile?.picture} />
-                <AvatarFallback className="bg-primary/10 text-primary">
-                  {profile?.name?.[0]?.toUpperCase() || 'A'}
-                </AvatarFallback>
-              </Avatar>
-              <div>
-                <p className="text-sm text-muted-foreground">Created by</p>
-                <p className="font-semibold">
-                  {profile?.displayName || profile?.name || shortNpub(goal.authorPubkey)}
-                </p>
-              </div>
-            </div>
+            
+            {/* Author Card */}
+            <Card className="mb-4">
+              <CardHeader>
+                <div className="flex items-center gap-3">
+                  <Avatar className="w-12 h-12 border-2 border-primary/20">
+                    <AvatarImage src={profile?.picture} />
+                    <AvatarFallback className="bg-primary/10 text-primary">
+                      {profile?.name?.[0]?.toUpperCase() || 'A'}
+                    </AvatarFallback>
+                  </Avatar>
+                  <div className="flex-1">
+                    <p className="text-sm text-muted-foreground">Created by</p>
+                    <p className="font-semibold">
+                      {profile?.displayName || profile?.name || shortNpub(goal.authorPubkey)}
+                    </p>
+                  </div>
+                </div>
+              </CardHeader>
+              {profile?.about && (
+                <CardContent className="pt-0">
+                  <p className="text-sm text-muted-foreground">{profile.about}</p>
+                  {profile.lud16 && (
+                    <p className="text-xs text-muted-foreground mt-2">⚡ {profile.lud16}</p>
+                  )}
+                </CardContent>
+              )}
+            </Card>
+
+            {/* Goal Metadata */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-base flex items-center gap-2">
+                  <Info className="w-4 h-4" />
+                  Goal Details
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                <div className="flex items-start gap-2">
+                  <Calendar className="w-4 h-4 text-muted-foreground mt-0.5" />
+                  <div className="flex-1">
+                    <p className="text-xs text-muted-foreground">Created</p>
+                    <p className="text-sm font-medium">
+                      {formatRelativeTime(goal.createdAt)}
+                    </p>
+                  </div>
+                </div>
+                
+                <Separator />
+                
+                <div className="flex items-start gap-2">
+                  <Target className="w-4 h-4 text-muted-foreground mt-0.5" />
+                  <div className="flex-1">
+                    <p className="text-xs text-muted-foreground">Target Amount</p>
+                    <p className="text-sm font-medium">
+                      {formatSats(goal.targetSats)} sats
+                    </p>
+                  </div>
+                </div>
+                
+                <Separator />
+                
+                <div className="flex items-start gap-2">
+                  <Hash className="w-4 h-4 text-muted-foreground mt-0.5" />
+                  <div className="flex-1">
+                    <p className="text-xs text-muted-foreground">Goal ID</p>
+                    <p className="text-sm font-mono break-all">
+                      {goal.goalId}
+                    </p>
+                  </div>
+                </div>
+                
+                {goal.status && (
+                  <>
+                    <Separator />
+                    <div className="flex items-center gap-2">
+                      <p className="text-xs text-muted-foreground">Status</p>
+                      <Badge variant={goal.status === 'active' ? 'default' : 'secondary'}>
+                        {goal.status}
+                      </Badge>
+                    </div>
+                  </>
+                )}
+              </CardContent>
+            </Card>
           </div>
 
           <div>
@@ -114,21 +187,40 @@ const GoalDetail = () => {
               {goal.title || goal.name || 'Untitled Goal'}
             </h1>
             
-            <div className="space-y-4 mb-6">
-              <div className="flex justify-between text-lg">
-                <span className="text-muted-foreground">Raised</span>
-                <span className="font-bold text-primary">
-                  {formatSats(raised)} sats
-                </span>
-              </div>
-              <Progress value={progress} className="h-3" />
-              <div className="flex justify-between text-sm">
-                <span className="text-muted-foreground">
-                  Goal: {formatSats(goal.targetSats)} sats
-                </span>
-                <span className="font-semibold">{progress.toFixed(1)}%</span>
-              </div>
-            </div>
+            {/* Description/Summary */}
+            {goal.summary && (
+              <Card className="mb-6">
+                <CardHeader>
+                  <CardTitle className="text-base">Description</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <p className="text-sm text-muted-foreground whitespace-pre-wrap">
+                    {goal.summary}
+                  </p>
+                </CardContent>
+              </Card>
+            )}
+            
+            {/* Progress Card */}
+            <Card className="mb-6">
+              <CardContent className="pt-6">
+                <div className="space-y-4">
+                  <div className="flex justify-between text-lg">
+                    <span className="text-muted-foreground">Raised</span>
+                    <span className="font-bold text-primary">
+                      {formatSats(raised)} sats
+                    </span>
+                  </div>
+                  <Progress value={progress} className="h-3" />
+                  <div className="flex justify-between text-sm">
+                    <span className="text-muted-foreground">
+                      Goal: {formatSats(goal.targetSats)} sats
+                    </span>
+                    <span className="font-semibold">{progress.toFixed(1)}%</span>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
 
             <Button
               size="lg"
