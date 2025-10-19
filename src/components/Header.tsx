@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom';
-import { Zap, Settings, User, LogOut } from 'lucide-react';
+import { Zap, Settings, User, LogOut, Home } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useAppSelector, useAppDispatch } from '@/stores/hooks';
 import { logout } from '@/stores/authSlice';
@@ -42,6 +42,12 @@ export const Header = () => {
               </span>
             </div>
           )}
+
+          <Link to="/">
+            <Button variant="ghost" size="icon">
+              <Home className="w-4 h-4" />
+            </Button>
+          </Link>
 
           <Link to="/me">
             <Button variant="ghost" size="icon">
