@@ -19,7 +19,26 @@ const Index = () => {
   useEffect(() => {
     const subscribeToEvents = async () => {
       try {
-        const ndk = getNDK();
+        // Wait for NDK to be initialized with a retry mechanism
+        let ndk;
+        let retries = 0;
+        const maxRetries = 10;
+        
+        while (retries < maxRetries) {
+          try {
+            ndk = getNDK();
+            break;
+          } catch (error) {
+            // NDK not ready yet, wait and retry
+            await new Promise(resolve => setTimeout(resolve, 100));
+            retries++;
+          }
+        }
+
+        if (!ndk) {
+          console.error('NDK failed to initialize after retries');
+          return;
+        }
 
         // Subscribe to kind 9041 (goals) - fetch all goals from relay pool
         const goalFilter: NDKFilter = { kinds: [9041 as any], limit: 500 };
