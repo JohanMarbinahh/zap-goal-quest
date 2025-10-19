@@ -104,19 +104,6 @@ const Settings = () => {
               </div>
             </div>
 
-            <div className="flex items-center gap-2">
-              <Label>Authentication Method:</Label>
-              <Badge variant={isNip07 ? 'default' : 'secondary'}>
-                {isNip07 ? 'NIP-07 (Browser Extension)' : 'Ephemeral Key (Local)'}
-              </Badge>
-            </div>
-
-            {!isNip07 && (
-              <p className="text-sm text-muted-foreground">
-                You're using a temporary key stored in your browser. Install a Nostr browser
-                extension like Alby or nos2x for persistent identity.
-              </p>
-            )}
           </CardContent>
         </Card>
 
