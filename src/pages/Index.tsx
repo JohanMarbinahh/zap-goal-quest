@@ -41,24 +41,37 @@ const Index = () => {
         }
 
         // Subscribe to kind 9041 (goals) - fetch all goals from relay pool
+        console.log('🔍 Starting subscription to kind 9041 goals...');
         const goalFilter: NDKFilter = { kinds: [9041 as any], limit: 500 };
         const goalSub = ndk.subscribe(goalFilter);
 
-        console.log('Subscribing to goal events (kind 9041)...');
-
+        let eventCount = 0;
         goalSub.on('event', (event) => {
-          console.log('Received goal event:', event.id);
+          eventCount++;
+          console.log(`📥 Received goal event #${eventCount}:`, {
+            id: event.id,
+            pubkey: event.pubkey,
+            kind: event.kind,
+            content: event.content?.substring(0, 100),
+            tags: event.tags,
+            created_at: event.created_at
+          });
+          
           const goal = parseGoal9041(event);
           if (goal) {
-            console.log('Parsed goal:', goal.goalId, goal.title);
+            console.log('✅ Successfully parsed goal:', {
+              goalId: goal.goalId,
+              title: goal.title,
+              targetSats: goal.targetSats
+            });
             dispatch(setGoal({ goalId: goal.goalId, goal }));
           } else {
-            console.log('Failed to parse goal event');
+            console.warn('❌ Failed to parse goal event:', event.id);
           }
         });
 
         goalSub.on('eose', () => {
-          console.log('End of stored events for goals');
+          console.log(`✨ End of stored events - received ${eventCount} goal events total`);
         });
 
         // Subscribe to kind 0 (profiles) for authors

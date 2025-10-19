@@ -21,32 +21,46 @@ export function parseProfile(event: NDKEvent): Profile | null {
 
 export function parseGoal9041(event: NDKEvent): Goal9041 | null {
   try {
+    // d tag is required for kind 9041 events
     const dTag = event.tags.find((t) => t[0] === 'd')?.[1];
-    if (!dTag) return null;
+    if (!dTag) {
+      console.warn('Goal event missing d tag:', event.id);
+      return null;
+    }
 
-    // Parse target from tags
+    // Parse target from tags - be flexible with tag names
     const goalTag = event.tags.find((t) => t[0] === 'goal');
     const amountTag = event.tags.find((t) => t[0] === 'amount');
+    const relaysTag = event.tags.find((t) => t[0] === 'relays');
+    const closedTag = event.tags.find((t) => t[0] === 'closed_at');
     
     let targetSats = 0;
     if (goalTag && goalTag[1] === 'sats') {
       targetSats = parseInt(goalTag[2] || '0', 10);
     } else if (amountTag) {
-      targetSats = parseInt(amountTag[1] || '0', 10);
+      // Amount might be in msats or sats
+      const amount = parseInt(amountTag[1] || '0', 10);
+      targetSats = amount > 1000000 ? Math.floor(amount / 1000) : amount;
     }
 
     // Try to parse content as JSON for additional metadata
     let title = '';
     let imageUrl = '';
-    let status = 'active';
+    let status = closedTag ? 'closed' : 'active';
     
     try {
       const content = JSON.parse(event.content);
-      title = content.title || content.name || '';
-      imageUrl = content.image || content.imageUrl || '';
-      status = content.status || 'active';
+      title = content.title || content.name || content.description || '';
+      imageUrl = content.image || content.imageUrl || content.picture || '';
+      status = content.status || status;
     } catch {
+      // If content is not JSON, use it as title
       title = event.content || 'Untitled Goal';
+    }
+
+    // If still no title, generate one from the goal ID
+    if (!title || title === 'Untitled Goal') {
+      title = `Goal: ${dTag.substring(0, 20)}${dTag.length > 20 ? '...' : ''}`;
     }
 
     return {
@@ -61,7 +75,7 @@ export function parseGoal9041(event: NDKEvent): Goal9041 | null {
       imageUrl,
     };
   } catch (error) {
-    console.error('Failed to parse goal:', error);
+    console.error('Failed to parse goal:', error, event);
     return null;
   }
 }
