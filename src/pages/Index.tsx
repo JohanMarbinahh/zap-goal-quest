@@ -1,4 +1,4 @@
-import { useEffect, useState, useMemo, useCallback, useRef } from 'react';
+import { useEffect, useState, useMemo, useCallback } from 'react';
 import { Plus, ChevronLeft, ChevronRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Spinner } from '@/components/ui/spinner';
@@ -15,10 +15,11 @@ import { NDKFilter, NDKSubscription } from '@nostr-dev-kit/ndk';
 const Index = () => {
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
-  const [isSubscribing, setIsSubscribing] = useState(false);
-  const hasSubscribed = useRef(false);
   const dispatch = useAppDispatch();
   const allGoals = useAppSelector((state) => Object.values(state.goals.goals));
+  
+  // Initialize loading state based on whether we already have goals
+  const [initialLoading, setInitialLoading] = useState(allGoals.length === 0);
   
   const GOALS_PER_PAGE = 30;
   const MAX_PAGES = 5;
@@ -39,13 +40,11 @@ const Index = () => {
   }, [currentPage, totalPages]);
 
   useEffect(() => {
-    // Skip if already subscribed or if we already have goals
-    if (hasSubscribed.current || allGoals.length > 0) {
+    // Skip if already subscribed
+    if (allGoals.length > 0) {
+      setInitialLoading(false);
       return;
     }
-    
-    hasSubscribed.current = true;
-    setIsSubscribing(true);
     
     let goalSub: NDKSubscription | null = null;
     let profileSub: NDKSubscription | null = null;
@@ -70,7 +69,6 @@ const Index = () => {
 
         if (!ndk) {
           console.error('NDK failed to initialize');
-          setIsSubscribing(false);
           return;
         }
 
@@ -86,7 +84,7 @@ const Index = () => {
         });
 
         goalSub.on('eose', () => {
-          setIsSubscribing(false);
+          setInitialLoading(false);
         });
 
         // Subscribe to kind 0 (profiles)
@@ -112,7 +110,6 @@ const Index = () => {
         });
       } catch (error) {
         console.error('Failed to subscribe to events:', error);
-        setIsSubscribing(false);
       }
     };
 
@@ -124,7 +121,7 @@ const Index = () => {
       if (profileSub) profileSub.stop();
       if (zapSub) zapSub.stop();
     };
-  }, [dispatch, allGoals.length]);
+  }, [dispatch]); // Only run once on mount, skip if data already exists
 
   return (
     <main className="container mx-auto px-4 py-8">
@@ -144,7 +141,7 @@ const Index = () => {
           </Button>
         </div>
 
-        {isSubscribing && allGoals.length === 0 ? (
+        {initialLoading ? (
           <div className="flex flex-col items-center justify-center py-20 gap-4">
             <Spinner size="lg" />
             <p className="text-muted-foreground">Loading goals...</p>
