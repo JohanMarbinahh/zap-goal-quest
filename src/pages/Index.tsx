@@ -44,11 +44,21 @@ const Index = () => {
         const goalFilter: NDKFilter = { kinds: [9041 as any], limit: 500 };
         const goalSub = ndk.subscribe(goalFilter);
 
+        console.log('Subscribing to goal events (kind 9041)...');
+
         goalSub.on('event', (event) => {
+          console.log('Received goal event:', event.id);
           const goal = parseGoal9041(event);
           if (goal) {
+            console.log('Parsed goal:', goal.goalId, goal.title);
             dispatch(setGoal({ goalId: goal.goalId, goal }));
+          } else {
+            console.log('Failed to parse goal event');
           }
+        });
+
+        goalSub.on('eose', () => {
+          console.log('End of stored events for goals');
         });
 
         // Subscribe to kind 0 (profiles) for authors
