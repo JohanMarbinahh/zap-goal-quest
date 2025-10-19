@@ -1,20 +1,81 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Plus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { GoalCard } from '@/components/GoalCard';
 import { CreateGoalDialog } from '@/components/CreateGoalDialog';
-import { useAppSelector } from '@/stores/hooks';
+import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
+import { useAppSelector, useAppDispatch } from '@/stores/hooks';
+import { getNDK } from '@/lib/ndk';
+import { parseProfile } from '@/lib/nostrHelpers';
+import { setProfile } from '@/stores/profilesSlice';
+import { NDKFilter } from '@nostr-dev-kit/ndk';
 
 const MyGoals = () => {
   const [isCreateOpen, setIsCreateOpen] = useState(false);
+  const dispatch = useAppDispatch();
   const goals = useAppSelector((state) => Object.values(state.goals.goals));
   const pubkey = useAppSelector((state) => state.auth.pubkey);
+  const profile = useAppSelector((state) => pubkey ? state.profiles.profiles[pubkey] : null);
   
   const myGoals = goals.filter((goal) => goal.authorPubkey === pubkey);
+
+  useEffect(() => {
+    const fetchProfile = async () => {
+      if (!pubkey) return;
+
+      try {
+        const ndk = getNDK();
+        console.log('🔍 Fetching profile for:', pubkey);
+        
+        const profileFilter: NDKFilter = { kinds: [0], authors: [pubkey] };
+        const events = await ndk.fetchEvents(profileFilter);
+        
+        console.log('📥 Received profile events:', events.size);
+        
+        if (events.size > 0) {
+          const event = Array.from(events)[0];
+          const parsedProfile = parseProfile(event);
+          
+          if (parsedProfile) {
+            console.log('✅ Profile parsed:', parsedProfile);
+            dispatch(setProfile({ pubkey, profile: parsedProfile }));
+          }
+        }
+      } catch (error) {
+        console.error('❌ Error fetching profile:', error);
+      }
+    };
+
+    fetchProfile();
+  }, [pubkey, dispatch]);
 
   return (
     <main className="container mx-auto px-4 py-8">
       <div className="max-w-7xl mx-auto">
+        {/* Profile Section */}
+        <div className="mb-8 p-6 rounded-lg border bg-card">
+          <div className="flex items-start gap-4">
+            <Avatar className="w-20 h-20">
+              <AvatarImage src={profile?.picture} alt={profile?.name || 'User'} />
+              <AvatarFallback className="text-2xl">
+                {(profile?.name || profile?.displayName || profile?.display_name || 'U')[0].toUpperCase()}
+              </AvatarFallback>
+            </Avatar>
+            <div className="flex-1">
+              <h2 className="text-2xl font-bold mb-1">
+                {profile?.displayName || profile?.display_name || profile?.name || 'Anonymous'}
+              </h2>
+              {profile?.about && (
+                <p className="text-muted-foreground mb-2">{profile.about}</p>
+              )}
+              {profile?.lud16 && (
+                <p className="text-sm text-muted-foreground">⚡ {profile.lud16}</p>
+              )}
+            </div>
+          </div>
+        </div>
+
+        {/* Goals Section */}
         <div className="flex items-center justify-between mb-8">
           <div>
             <h1 className="text-4xl font-bold mb-2 bg-gradient-to-r from-primary to-primary-glow bg-clip-text text-transparent">
