@@ -2,7 +2,6 @@ import { useEffect, useState, useMemo, useCallback } from 'react';
 import { Plus, ChevronLeft, ChevronRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { GoalCard } from '@/components/GoalCard';
-import { GoalCardSkeleton } from '@/components/GoalCardSkeleton';
 import { CreateGoalDialog } from '@/components/CreateGoalDialog';
 import { useAppDispatch, useAppSelector } from '@/stores/hooks';
 import { setGoal } from '@/stores/goalsSlice';
@@ -151,10 +150,8 @@ const Index = () => {
         </div>
 
         {initialLoading ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {Array.from({ length: 6 }).map((_, i) => (
-              <GoalCardSkeleton key={i} />
-            ))}
+          <div className="text-center py-20">
+            <div className="text-muted-foreground">Loading goals...</div>
           </div>
         ) : goals.length === 0 ? (
           <div className="text-center py-20">
@@ -172,19 +169,11 @@ const Index = () => {
           </div>
         ) : (
           <>
-            {isLoading ? (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {Array.from({ length: 6 }).map((_, i) => (
-                  <GoalCardSkeleton key={i} />
-                ))}
-              </div>
-            ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {goals.map((goal) => (
-                  <GoalCard key={goal.goalId} goal={goal} />
-                ))}
-              </div>
-            )}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {goals.map((goal) => (
+                <GoalCard key={goal.goalId} goal={goal} />
+              ))}
+            </div>
             
             {/* Pagination Controls */}
             {totalPages > 1 && (

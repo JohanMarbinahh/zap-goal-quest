@@ -5,7 +5,6 @@ import { Card, CardContent, CardFooter, CardHeader } from '@/components/ui/card'
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Skeleton } from '@/components/ui/skeleton';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Goal9041 } from '@/types/nostr';
 import { useAppSelector } from '@/stores/hooks';
@@ -18,7 +17,6 @@ interface GoalCardProps {
 
 export const GoalCard = memo(({ goal }: GoalCardProps) => {
   const [isExpanded, setIsExpanded] = useState(false);
-  const [imageLoaded, setImageLoaded] = useState(false);
   const navigate = useNavigate();
   const profile = useAppSelector((state) => state.profiles.profiles[goal.authorPubkey]);
   const zaps = useAppSelector((state) => state.zaps.zapsByGoal[goal.eventId] || []);
@@ -54,15 +52,11 @@ export const GoalCard = memo(({ goal }: GoalCardProps) => {
       onClick={handleCardClick}
     >
       {goal.imageUrl && (
-        <div className="aspect-video overflow-hidden bg-muted relative">
-          {!imageLoaded && (
-            <Skeleton className="absolute inset-0 w-full h-full" />
-          )}
+        <div className="aspect-video overflow-hidden bg-muted">
           <img
             src={goal.imageUrl}
             alt={goal.title || goal.name}
-            className={`w-full h-full object-cover group-hover:scale-105 transition-transform duration-300 ${!imageLoaded ? 'opacity-0' : 'opacity-100'}`}
-            onLoad={() => setImageLoaded(true)}
+            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
           />
         </div>
       )}
