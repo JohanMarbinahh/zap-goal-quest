@@ -1,5 +1,5 @@
 import { Wifi, WifiOff } from 'lucide-react';
-import { useRelaysStore } from '@/stores/relaysStore';
+import { useAppSelector } from '@/stores/hooks';
 import {
   Tooltip,
   TooltipContent,
@@ -8,7 +8,7 @@ import {
 } from '@/components/ui/tooltip';
 
 export const RelayStatus = () => {
-  const { relayStatuses } = useRelaysStore();
+  const relayStatuses = useAppSelector((state) => state.relays.relayStatuses);
 
   const connectedCount = relayStatuses.filter((r) => r.connected).length;
   const totalCount = relayStatuses.length;

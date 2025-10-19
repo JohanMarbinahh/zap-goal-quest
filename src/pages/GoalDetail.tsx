@@ -7,9 +7,7 @@ import { Progress } from '@/components/ui/progress';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
-import { useGoalsStore } from '@/stores/goalsStore';
-import { useProfilesStore } from '@/stores/profilesStore';
-import { useZapsStore } from '@/stores/zapsStore';
+import { useAppSelector } from '@/stores/hooks';
 import { shortNpub } from '@/lib/ndk';
 import { formatSats, formatRelativeTime } from '@/lib/nostrHelpers';
 import { ZapTimeline } from '@/components/ZapTimeline';
@@ -18,15 +16,34 @@ const GoalDetail = () => {
   const { id } = useParams<{ id: string }>();
   const [excludeSelfZaps, setExcludeSelfZaps] = useState(true);
   
-  const { getGoal } = useGoalsStore();
-  const { getProfile } = useProfilesStore();
-  const { getZapsForGoal, getRaisedForGoal, getTopSupporters } = useZapsStore();
-
-  const goal = id ? getGoal(id) : undefined;
-  const profile = goal ? getProfile(goal.authorPubkey) : undefined;
-  const zaps = goal ? getZapsForGoal(goal.eventId) : [];
-  const raised = goal ? getRaisedForGoal(goal.eventId, excludeSelfZaps, goal.authorPubkey) : 0;
-  const topSupporters = goal ? getTopSupporters(goal.eventId, excludeSelfZaps, goal.authorPubkey) : [];
+  const goal = useAppSelector((state) => id ? state.goals.goals[id] : undefined);
+  const profile = useAppSelector((state) => 
+    goal ? state.profiles.profiles[goal.authorPubkey] : undefined
+  );
+  const zaps = useAppSelector((state) => 
+    goal ? (state.zaps.zapsByGoal[goal.eventId] || []) : []
+  );
+  
+  // Calculate raised amount
+  const filteredZaps = excludeSelfZaps && goal
+    ? zaps.filter(z => z.zapperPubkey !== goal.authorPubkey)
+    : zaps;
+  const raised = filteredZaps.reduce((sum, zap) => sum + Math.floor(zap.amountMsat / 1000), 0);
+  
+  // Calculate top supporters
+  const supportersMap = new Map<string, { pubkey: string; total: number; count: number }>();
+  filteredZaps.forEach((zap) => {
+    if (!zap.zapperPubkey) return;
+    const existing = supportersMap.get(zap.zapperPubkey);
+    const amount = Math.floor(zap.amountMsat / 1000);
+    if (existing) {
+      existing.total += amount;
+      existing.count += 1;
+    } else {
+      supportersMap.set(zap.zapperPubkey, { pubkey: zap.zapperPubkey, total: amount, count: 1 });
+    }
+  });
+  const topSupporters = Array.from(supportersMap.values()).sort((a, b) => b.total - a.total);
   
   const progress = goal ? Math.min((raised / goal.targetSats) * 100, 100) : 0;
 
@@ -153,11 +170,12 @@ const GoalDetail = () => {
               </CardHeader>
               <CardContent>
                 <div className="space-y-3 max-h-[500px] overflow-y-auto">
-                  {zaps
-                    .filter((z) => !excludeSelfZaps || z.zapperPubkey !== goal.authorPubkey)
+                  {filteredZaps
                     .sort((a, b) => b.createdAt - a.createdAt)
                     .map((zap) => {
-                      const zapperProfile = zap.zapperPubkey ? getProfile(zap.zapperPubkey) : null;
+                      const zapperProfile = useAppSelector((state) => 
+                        zap.zapperPubkey ? state.profiles.profiles[zap.zapperPubkey] : null
+                      );
                       return (
                         <div
                           key={zap.eventId}
@@ -218,7 +236,9 @@ const GoalDetail = () => {
               <CardContent>
                 <div className="space-y-3">
                   {topSupporters.slice(0, 10).map((supporter, index) => {
-                    const supporterProfile = getProfile(supporter.pubkey);
+                    const supporterProfile = useAppSelector((state) => 
+                      state.profiles.profiles[supporter.pubkey]
+                    );
                     return (
                       <div
                         key={supporter.pubkey}

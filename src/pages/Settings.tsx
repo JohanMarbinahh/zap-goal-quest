@@ -5,15 +5,18 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
-import { useRelaysStore } from '@/stores/relaysStore';
-import { useAuthStore } from '@/stores/authStore';
+import { useAppSelector, useAppDispatch } from '@/stores/hooks';
+import { addRelay, removeRelay } from '@/stores/relaysSlice';
 import { toast } from '@/hooks/use-toast';
 
 const Settings = () => {
   const [newRelay, setNewRelay] = useState('');
   const [copiedNpub, setCopiedNpub] = useState(false);
-  const { relays, relayStatuses, addRelay, removeRelay } = useRelaysStore();
-  const { npub, isNip07 } = useAuthStore();
+  const dispatch = useAppDispatch();
+  const relays = useAppSelector((state) => state.relays.relays);
+  const relayStatuses = useAppSelector((state) => state.relays.relayStatuses);
+  const npub = useAppSelector((state) => state.auth.npub);
+  const isNip07 = useAppSelector((state) => state.auth.isNip07);
 
   const handleAddRelay = () => {
     if (!newRelay) return;
@@ -36,7 +39,7 @@ const Settings = () => {
       return;
     }
 
-    addRelay(newRelay);
+    dispatch(addRelay(newRelay));
     setNewRelay('');
     toast({
       title: 'Relay Added',
@@ -45,7 +48,7 @@ const Settings = () => {
   };
 
   const handleRemoveRelay = (url: string) => {
-    removeRelay(url);
+    dispatch(removeRelay(url));
     toast({
       title: 'Relay Removed',
       description: 'Refresh the page to disconnect from this relay.',

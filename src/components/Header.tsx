@@ -1,12 +1,23 @@
 import { Link } from 'react-router-dom';
-import { Zap, Settings, User } from 'lucide-react';
+import { Zap, Settings, User, LogOut } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { useAuthStore } from '@/stores/authStore';
+import { useAppSelector, useAppDispatch } from '@/stores/hooks';
+import { logout } from '@/stores/authSlice';
 import { shortNpub } from '@/lib/ndk';
 import { RelayStatus } from './RelayStatus';
+import { toast } from '@/hooks/use-toast';
 
 export const Header = () => {
-  const { npub, isNip07 } = useAuthStore();
+  const dispatch = useAppDispatch();
+  const { npub, isNip07 } = useAppSelector((state) => state.auth);
+
+  const handleLogout = () => {
+    dispatch(logout());
+    toast({
+      title: "Logged out",
+      description: "You have been logged out successfully",
+    });
+  };
 
   return (
     <header className="border-b border-border bg-card/50 backdrop-blur-lg sticky top-0 z-50">
@@ -43,6 +54,12 @@ export const Header = () => {
               <Settings className="w-4 h-4" />
             </Button>
           </Link>
+
+          {npub && (
+            <Button variant="ghost" size="icon" onClick={handleLogout}>
+              <LogOut className="w-4 h-4" />
+            </Button>
+          )}
         </div>
       </div>
     </header>

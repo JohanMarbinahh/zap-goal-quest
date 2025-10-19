@@ -21,7 +21,8 @@ import {
 } from '@/components/ui/select';
 import { toast } from '@/hooks/use-toast';
 import { getNDK, publishEvent } from '@/lib/ndk';
-import { useGoalsStore } from '@/stores/goalsStore';
+import { useAppDispatch } from '@/stores/hooks';
+import { setGoal } from '@/stores/goalsSlice';
 import { parseGoal9041 } from '@/lib/nostrHelpers';
 
 interface CreateGoalDialogProps {
@@ -35,7 +36,7 @@ export const CreateGoalDialog = ({ open, onOpenChange }: CreateGoalDialogProps) 
   const [imageUrl, setImageUrl] = useState('');
   const [status, setStatus] = useState('active');
   const [isLoading, setIsLoading] = useState(false);
-  const { setGoal } = useGoalsStore();
+  const dispatch = useAppDispatch();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -71,12 +72,11 @@ export const CreateGoalDialog = ({ open, onOpenChange }: CreateGoalDialogProps) 
         ['unit', 'sat'],
       ];
 
-      await publishEvent(event);
+      const publishedEvent = await publishEvent(event);
 
-      // Parse and store the goal
-      const goal = parseGoal9041(event);
+      const goal = parseGoal9041(publishedEvent);
       if (goal) {
-        setGoal(goal.goalId, goal);
+        dispatch(setGoal({ goalId: goal.goalId, goal }));
       }
 
       toast({

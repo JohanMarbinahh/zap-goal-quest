@@ -5,8 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Goal9041 } from '@/types/nostr';
-import { useProfilesStore } from '@/stores/profilesStore';
-import { useZapsStore } from '@/stores/zapsStore';
+import { useAppSelector } from '@/stores/hooks';
 import { shortNpub } from '@/lib/ndk';
 import { formatSats } from '@/lib/nostrHelpers';
 
@@ -15,11 +14,9 @@ interface GoalCardProps {
 }
 
 export const GoalCard = ({ goal }: GoalCardProps) => {
-  const { getProfile } = useProfilesStore();
-  const { getRaisedForGoal } = useZapsStore();
-  
-  const profile = getProfile(goal.authorPubkey);
-  const raised = getRaisedForGoal(goal.eventId);
+  const profile = useAppSelector((state) => state.profiles.profiles[goal.authorPubkey]);
+  const zaps = useAppSelector((state) => state.zaps.zapsByGoal[goal.eventId] || []);
+  const raised = zaps.reduce((sum, zap) => sum + Math.floor(zap.amountMsat / 1000), 0);
   const progress = Math.min((raised / goal.targetSats) * 100, 100);
 
   const handleFund = () => {

@@ -3,15 +3,14 @@ import { Plus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { GoalCard } from '@/components/GoalCard';
 import { CreateGoalDialog } from '@/components/CreateGoalDialog';
-import { useGoalsStore } from '@/stores/goalsStore';
-import { useAuthStore } from '@/stores/authStore';
+import { useAppSelector } from '@/stores/hooks';
 
 const MyGoals = () => {
   const [isCreateOpen, setIsCreateOpen] = useState(false);
-  const { getAllGoals } = useGoalsStore();
-  const { pubkey } = useAuthStore();
+  const goals = useAppSelector((state) => Object.values(state.goals.goals));
+  const pubkey = useAppSelector((state) => state.auth.pubkey);
   
-  const myGoals = getAllGoals().filter((goal) => goal.authorPubkey === pubkey);
+  const myGoals = goals.filter((goal) => goal.authorPubkey === pubkey);
 
   return (
     <main className="container mx-auto px-4 py-8">

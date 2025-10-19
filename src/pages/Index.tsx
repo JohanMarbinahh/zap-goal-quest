@@ -3,19 +3,18 @@ import { Plus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { GoalCard } from '@/components/GoalCard';
 import { CreateGoalDialog } from '@/components/CreateGoalDialog';
-import { useGoalsStore } from '@/stores/goalsStore';
-import { useProfilesStore } from '@/stores/profilesStore';
-import { useZapsStore } from '@/stores/zapsStore';
+import { useAppDispatch, useAppSelector } from '@/stores/hooks';
+import { setGoal } from '@/stores/goalsSlice';
+import { setProfile } from '@/stores/profilesSlice';
+import { addZap } from '@/stores/zapsSlice';
 import { getNDK } from '@/lib/ndk';
 import { parseGoal9041, parseProfile, parseZap9735 } from '@/lib/nostrHelpers';
 import { NDKFilter } from '@nostr-dev-kit/ndk';
 
 const Index = () => {
   const [isCreateOpen, setIsCreateOpen] = useState(false);
-  const { setGoal, getAllGoals } = useGoalsStore();
-  const { setProfile } = useProfilesStore();
-  const { addZap } = useZapsStore();
-  const goals = getAllGoals();
+  const dispatch = useAppDispatch();
+  const goals = useAppSelector((state) => Object.values(state.goals.goals));
 
   useEffect(() => {
     const subscribeToEvents = async () => {
@@ -29,7 +28,7 @@ const Index = () => {
         goalSub.on('event', (event) => {
           const goal = parseGoal9041(event);
           if (goal) {
-            setGoal(goal.goalId, goal);
+            dispatch(setGoal({ goalId: goal.goalId, goal }));
           }
         });
 
@@ -40,7 +39,7 @@ const Index = () => {
         profileSub.on('event', (event) => {
           const profile = parseProfile(event);
           if (profile) {
-            setProfile(profile.pubkey, profile);
+            dispatch(setProfile({ pubkey: profile.pubkey, profile }));
           }
         });
 
@@ -51,7 +50,7 @@ const Index = () => {
         zapSub.on('event', (event) => {
           const zap = parseZap9735(event);
           if (zap) {
-            addZap(zap);
+            dispatch(addZap(zap));
           }
         });
       } catch (error) {
@@ -60,7 +59,7 @@ const Index = () => {
     };
 
     subscribeToEvents();
-  }, [setGoal, setProfile, addZap]);
+  }, [dispatch]);
 
   return (
     <main className="container mx-auto px-4 py-8">

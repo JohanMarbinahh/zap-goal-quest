@@ -1,12 +1,13 @@
 import NDK, { NDKEvent, NDKNip07Signer, NDKPrivateKeySigner } from '@nostr-dev-kit/ndk';
-import { useRelaysStore } from '@/stores/relaysStore';
-import { useAuthStore } from '@/stores/authStore';
+import { store } from '@/stores/store';
+import { updateRelayStatus } from '@/stores/relaysSlice';
+import { setPubkey, setEphemeralKey } from '@/stores/authSlice';
 import { nip19 } from 'nostr-tools';
 
 let ndkInstance: NDK | null = null;
 
 export async function initNDK() {
-  const relays = useRelaysStore.getState().relays;
+  const relays = store.getState().relays.relays;
   
   ndkInstance = new NDK({
     explicitRelayUrls: relays,
@@ -14,11 +15,11 @@ export async function initNDK() {
 
   // Set up relay status tracking
   ndkInstance.pool.on('relay:connect', (relay) => {
-    useRelaysStore.getState().updateRelayStatus(relay.url, true);
+    store.dispatch(updateRelayStatus({ url: relay.url, connected: true }));
   });
 
   ndkInstance.pool.on('relay:disconnect', (relay) => {
-    useRelaysStore.getState().updateRelayStatus(relay.url, false);
+    store.dispatch(updateRelayStatus({ url: relay.url, connected: false }));
   });
 
   await ndkInstance.connect();
@@ -34,7 +35,7 @@ export function getNDK() {
 
 export async function setupAuth() {
   const ndk = getNDK();
-  const authStore = useAuthStore.getState();
+  const authState = store.getState().auth;
 
   // Try NIP-07 first
   if (window.nostr) {
@@ -45,7 +46,7 @@ export async function setupAuth() {
       const user = await signer.user();
       const npub = nip19.npubEncode(user.pubkey);
       
-      authStore.setPubkey(user.pubkey, npub, true);
+      store.dispatch(setPubkey({ pubkey: user.pubkey, npub, isNip07: true }));
       return { pubkey: user.pubkey, npub, isNip07: true };
     } catch (error) {
       console.error('NIP-07 auth failed:', error);
@@ -53,11 +54,11 @@ export async function setupAuth() {
   }
 
   // Fallback to ephemeral key
-  let ephemeralKey = authStore.ephemeralKey;
+  let ephemeralKey = authState.ephemeralKey;
   if (!ephemeralKey) {
     const privateKey = NDKPrivateKeySigner.generate();
     ephemeralKey = privateKey.privateKey!;
-    authStore.setEphemeralKey(ephemeralKey);
+    store.dispatch(setEphemeralKey(ephemeralKey));
   }
 
   const signer = new NDKPrivateKeySigner(ephemeralKey);
@@ -66,7 +67,7 @@ export async function setupAuth() {
   const user = await signer.user();
   const npub = nip19.npubEncode(user.pubkey);
   
-  authStore.setPubkey(user.pubkey, npub, false);
+  store.dispatch(setPubkey({ pubkey: user.pubkey, npub, isNip07: false }));
   return { pubkey: user.pubkey, npub, isNip07: false };
 }
 
