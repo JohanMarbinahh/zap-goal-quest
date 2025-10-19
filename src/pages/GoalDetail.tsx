@@ -10,7 +10,6 @@ import { Label } from '@/components/ui/label';
 import { useAppSelector } from '@/stores/hooks';
 import { shortNpub } from '@/lib/ndk';
 import { formatSats, formatRelativeTime } from '@/lib/nostrHelpers';
-import { ZapTimeline } from '@/components/ZapTimeline';
 
 const GoalDetail = () => {
   const { id } = useParams<{ id: string }>();
@@ -223,8 +222,6 @@ const GoalDetail = () => {
                 </div>
               </CardContent>
             </Card>
-
-            <ZapTimeline zaps={zaps} />
           </div>
 
           {/* Top Supporters */}
