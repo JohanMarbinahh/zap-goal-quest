@@ -20,7 +20,7 @@ const Index = () => {
   const dispatch = useAppDispatch();
   const allGoals = useAppSelector((state) => Object.values(state.goals.goals));
   
-  const GOALS_PER_PAGE = 100;
+  const GOALS_PER_PAGE = 30;
   const MAX_PAGES = 5;
   
   // Memoize pagination calculations
