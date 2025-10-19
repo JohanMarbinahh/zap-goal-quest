@@ -40,15 +40,32 @@ const Index = () => {
           return;
         }
 
+        // Log connected relays
+        console.log('📡 Connected relays:', Array.from(ndk.pool.relays.keys()));
+        console.log('🔌 Relay statuses:', 
+          Array.from(ndk.pool.relays.entries()).map(([url, relay]) => ({
+            url,
+            connected: relay.status === 1 // 1 = connected
+          }))
+        );
+
         // Subscribe to kind 9041 (goals) - fetch all goals from relay pool
         console.log('🔍 Starting subscription to kind 9041 goals...');
+        console.log('📝 Filter:', { kinds: [9041], limit: 500 });
         const goalFilter: NDKFilter = { kinds: [9041 as any], limit: 500 };
-        const goalSub = ndk.subscribe(goalFilter);
+        const goalSub = ndk.subscribe(goalFilter, { closeOnEose: false });
 
         let eventCount = 0;
-        goalSub.on('event', (event) => {
+        const relayEvents = new Map<string, number>();
+
+        goalSub.on('event', (event, relay) => {
           eventCount++;
-          console.log(`📥 Received goal event #${eventCount}:`, {
+          
+          // Track which relay sent this event
+          const relayUrl = relay?.url || 'unknown';
+          relayEvents.set(relayUrl, (relayEvents.get(relayUrl) || 0) + 1);
+          
+          console.log(`📥 Event #${eventCount} from ${relayUrl}:`, {
             id: event.id,
             pubkey: event.pubkey,
             kind: event.kind,
@@ -62,7 +79,8 @@ const Index = () => {
             console.log('✅ Successfully parsed goal:', {
               goalId: goal.goalId,
               title: goal.title,
-              targetSats: goal.targetSats
+              targetSats: goal.targetSats,
+              from: relayUrl
             });
             dispatch(setGoal({ goalId: goal.goalId, goal }));
           } else {
@@ -70,9 +88,18 @@ const Index = () => {
           }
         });
 
-        goalSub.on('eose', () => {
-          console.log(`✨ End of stored events - received ${eventCount} goal events total`);
+        goalSub.on('eose', (relay) => {
+          console.log(`✨ EOSE from ${relay?.url || 'unknown'}`);
         });
+
+        // Log summary after all relays respond
+        setTimeout(() => {
+          console.log(`\n📊 SUMMARY: Received ${eventCount} goal events total`);
+          console.log('📈 Events per relay:');
+          relayEvents.forEach((count, url) => {
+            console.log(`  ${url}: ${count} events`);
+          });
+        }, 5000);
 
         // Subscribe to kind 0 (profiles) for authors
         const profileFilter: NDKFilter = { kinds: [0], limit: 100 };
