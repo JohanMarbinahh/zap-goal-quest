@@ -165,20 +165,19 @@ const Index = () => {
           <>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {goals.map((goal) => (
-                <div key={goal.goalId} style={{ contentVisibility: 'auto', containIntrinsicSize: '400px' }}>
-                  <GoalCard goal={goal} />
-                </div>
+                <GoalCard key={goal.goalId} goal={goal} />
               ))}
             </div>
             
             {/* Pagination Controls */}
             {totalPages > 1 && (
-              <div className="flex items-center justify-center gap-2 mt-8">
+              <div className="flex items-center justify-center gap-2 mt-8 mb-8">
                 <Button
                   variant="outline"
                   size="icon"
                   onClick={() => handlePageChange(currentPage - 1)}
                   disabled={currentPage === 1}
+                  aria-label="Previous page"
                 >
                   <ChevronLeft className="w-4 h-4" />
                 </Button>
@@ -189,6 +188,7 @@ const Index = () => {
                     variant={currentPage === page ? "default" : "outline"}
                     onClick={() => handlePageChange(page)}
                     className="w-10"
+                    aria-label={`Page ${page}`}
                   >
                     {page}
                   </Button>
@@ -199,6 +199,7 @@ const Index = () => {
                   size="icon"
                   onClick={() => handlePageChange(currentPage + 1)}
                   disabled={currentPage === totalPages}
+                  aria-label="Next page"
                 >
                   <ChevronRight className="w-4 h-4" />
                 </Button>
