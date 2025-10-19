@@ -54,12 +54,14 @@ export function parseGoal9041(event: NDKEvent): Goal9041 | null {
 
     // Try to parse content for metadata
     let title = '';
+    let summary = '';
     let imageUrl = imageTag || ''; // Start with image tag if exists
     let status = closedTag ? 'closed' : 'active';
     
     try {
       const content = JSON.parse(event.content);
-      title = content.title || content.name || content.description || content.summary || '';
+      title = content.title || content.name || '';
+      summary = content.summary || content.description || content.about || '';
       // Use content image if no tag image, or if content has one
       imageUrl = content.image || content.imageUrl || content.picture || imageUrl;
       status = content.status || status;
@@ -92,6 +94,7 @@ export function parseGoal9041(event: NDKEvent): Goal9041 | null {
       status,
       createdAt: event.created_at || Date.now() / 1000,
       imageUrl,
+      summary: summary.substring(0, 500), // Limit summary length
     };
   } catch (error) {
     console.error('Failed to parse goal:', error, event);

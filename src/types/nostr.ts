@@ -18,6 +18,7 @@ export interface Goal9041 {
   status?: string;
   createdAt: number;
   imageUrl?: string;
+  summary?: string;
 }
 
 export interface Zap9735 {

@@ -1,10 +1,11 @@
-import { memo, useMemo } from 'react';
+import { memo, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { ExternalLink, Zap } from 'lucide-react';
+import { ExternalLink, Zap, ChevronDown, ChevronUp } from 'lucide-react';
 import { Card, CardContent, CardFooter, CardHeader } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Goal9041 } from '@/types/nostr';
 import { useAppSelector } from '@/stores/hooks';
 import { shortNpub } from '@/lib/ndk';
@@ -15,6 +16,7 @@ interface GoalCardProps {
 }
 
 export const GoalCard = memo(({ goal }: GoalCardProps) => {
+  const [isExpanded, setIsExpanded] = useState(false);
   const profile = useAppSelector((state) => state.profiles.profiles[goal.authorPubkey]);
   const zaps = useAppSelector((state) => state.zaps.zapsByGoal[goal.eventId] || []);
   
@@ -30,6 +32,8 @@ export const GoalCard = memo(({ goal }: GoalCardProps) => {
       window.open(`lightning:${profile.lud16}`, '_blank');
     }
   };
+  
+  const hasSummary = goal.summary && goal.summary.trim().length > 0;
 
   return (
     <Card className="overflow-hidden group hover:shadow-lg hover:shadow-primary/20 transition-all duration-300 border-border/50">
@@ -63,6 +67,28 @@ export const GoalCard = memo(({ goal }: GoalCardProps) => {
       </CardHeader>
 
       <CardContent className="space-y-4">
+        {hasSummary && (
+          <div className="space-y-2">
+            <div 
+              className={`text-sm text-muted-foreground ${!isExpanded ? 'line-clamp-2' : ''}`}
+            >
+              {goal.summary}
+            </div>
+            {goal.summary && goal.summary.length > 100 && (
+              <button
+                onClick={() => setIsExpanded(!isExpanded)}
+                className="text-xs text-primary hover:underline flex items-center gap-1"
+              >
+                {isExpanded ? (
+                  <>Show less <ChevronUp className="w-3 h-3" /></>
+                ) : (
+                  <>Show more <ChevronDown className="w-3 h-3" /></>
+                )}
+              </button>
+            )}
+          </div>
+        )}
+        
         <div className="space-y-2">
           <div className="flex justify-between text-sm">
             <span className="text-muted-foreground">Progress</span>
@@ -78,15 +104,28 @@ export const GoalCard = memo(({ goal }: GoalCardProps) => {
       </CardContent>
 
       <CardFooter className="pt-0 gap-2">
-        <Button
-          variant="default"
-          className="flex-1 gap-2"
-          onClick={handleFund}
-          disabled={!profile?.lud16}
-        >
-          <Zap className="w-4 h-4" fill="currentColor" />
-          Fund
-        </Button>
+        <TooltipProvider>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <div className="flex-1">
+                <Button
+                  variant="default"
+                  className="w-full gap-2"
+                  onClick={handleFund}
+                  disabled={!profile?.lud16}
+                >
+                  <Zap className="w-4 h-4" fill="currentColor" />
+                  Fund
+                </Button>
+              </div>
+            </TooltipTrigger>
+            {!profile?.lud16 && (
+              <TooltipContent>
+                <p>No Lightning address available for this goal</p>
+              </TooltipContent>
+            )}
+          </Tooltip>
+        </TooltipProvider>
         <Link to={`/goal/${goal.goalId}`} className="flex-1">
           <Button variant="outline" className="w-full gap-2">
             View
