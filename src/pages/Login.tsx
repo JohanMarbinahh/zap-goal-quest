@@ -4,7 +4,6 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { useToast } from '@/hooks/use-toast';
 import { Zap } from 'lucide-react';
 import { loginWithPrivateKey, loginWithNip07 } from '@/lib/ndk';
 
@@ -12,33 +11,19 @@ export default function Login() {
   const [privateKey, setPrivateKey] = useState('');
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
-  const { toast } = useToast();
 
   const handlePrivateKeyLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!privateKey.trim()) {
-      toast({
-        title: 'Error',
-        description: 'Please enter your private key',
-        variant: 'destructive',
-      });
       return;
     }
 
     setLoading(true);
     try {
       await loginWithPrivateKey(privateKey.trim());
-      toast({
-        title: 'Success',
-        description: 'Logged in successfully',
-      });
       navigate('/');
     } catch (error) {
-      toast({
-        title: 'Authentication failed',
-        description: error instanceof Error ? error.message : 'Invalid private key',
-        variant: 'destructive',
-      });
+      console.error('Authentication failed:', error);
     } finally {
       setLoading(false);
     }
@@ -48,17 +33,9 @@ export default function Login() {
     setLoading(true);
     try {
       await loginWithNip07();
-      toast({
-        title: 'Success',
-        description: 'Logged in with browser extension',
-      });
       navigate('/');
     } catch (error) {
-      toast({
-        title: 'Authentication failed',
-        description: error instanceof Error ? error.message : 'Browser extension not found',
-        variant: 'destructive',
-      });
+      console.error('Authentication failed:', error);
     } finally {
       setLoading(false);
     }
