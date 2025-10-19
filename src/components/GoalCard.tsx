@@ -51,16 +51,6 @@ export const GoalCard = memo(({ goal }: GoalCardProps) => {
       className="overflow-hidden group hover:shadow-lg hover:shadow-primary/20 transition-all duration-300 border-border/50 cursor-pointer" 
       onClick={handleCardClick}
     >
-      {goal.imageUrl && (
-        <div className="aspect-video overflow-hidden bg-muted">
-          <img
-            src={goal.imageUrl}
-            alt={goal.title || goal.name}
-            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-          />
-        </div>
-      )}
-      
       <CardHeader className="pb-3">
         <div className="flex items-start gap-3">
           <Avatar className="w-10 h-10 border-2 border-primary/20">
