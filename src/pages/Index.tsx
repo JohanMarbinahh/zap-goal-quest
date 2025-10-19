@@ -3,6 +3,7 @@ import { Plus, ChevronLeft, ChevronRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { GoalCard } from '@/components/GoalCard';
 import { CreateGoalDialog } from '@/components/CreateGoalDialog';
+import { Spinner } from '@/components/ui/spinner';
 import { useAppDispatch, useAppSelector } from '@/stores/hooks';
 import { setGoal } from '@/stores/goalsSlice';
 import { setProfile } from '@/stores/profilesSlice';
@@ -14,13 +15,14 @@ import { NDKFilter } from '@nostr-dev-kit/ndk';
 const Index = () => {
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
+  const [loadedPages, setLoadedPages] = useState<Set<number>>(new Set([1]));
+  const [isLoading, setIsLoading] = useState(false);
   const dispatch = useAppDispatch();
   const goalsState = useAppSelector((state) => state.goals);
   const allGoals = useAppSelector((state) => Object.values(state.goals.goals));
   
   const GOALS_PER_PAGE = 100;
   const MAX_PAGES = 5;
-  const totalGoals = Math.min(allGoals.length, GOALS_PER_PAGE * MAX_PAGES);
   const totalPages = Math.min(Math.ceil(allGoals.length / GOALS_PER_PAGE), MAX_PAGES);
   
   // Calculate goals for current page
@@ -28,13 +30,27 @@ const Index = () => {
   const endIndex = startIndex + GOALS_PER_PAGE;
   const goals = allGoals.slice(startIndex, endIndex);
   
+  const handlePageChange = async (page: number) => {
+    if (page === currentPage) return;
+    
+    setCurrentPage(page);
+    
+    // If this page hasn't been loaded yet, show loading
+    if (!loadedPages.has(page)) {
+      setIsLoading(true);
+      // Simulate loading delay to show the spinner
+      await new Promise(resolve => setTimeout(resolve, 500));
+      setLoadedPages(prev => new Set(prev).add(page));
+      setIsLoading(false);
+    }
+  };
+  
   console.log('🏠 Homepage state:', {
     goalsInState: Object.keys(goalsState.goals).length,
     currentPage,
     totalPages,
     goalsDisplayed: goals.length,
-    startIndex,
-    endIndex,
+    loadedPages: Array.from(loadedPages),
   });
 
   useEffect(() => {
@@ -187,11 +203,17 @@ const Index = () => {
           </div>
         ) : (
           <>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {goals.map((goal) => (
-                <GoalCard key={goal.goalId} goal={goal} />
-              ))}
-            </div>
+            {isLoading ? (
+              <div className="flex justify-center items-center py-20">
+                <Spinner size="lg" />
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {goals.map((goal) => (
+                  <GoalCard key={goal.goalId} goal={goal} />
+                ))}
+              </div>
+            )}
             
             {/* Pagination Controls */}
             {totalPages > 1 && (
@@ -199,8 +221,8 @@ const Index = () => {
                 <Button
                   variant="outline"
                   size="icon"
-                  onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
-                  disabled={currentPage === 1}
+                  onClick={() => handlePageChange(currentPage - 1)}
+                  disabled={currentPage === 1 || isLoading}
                 >
                   <ChevronLeft className="w-4 h-4" />
                 </Button>
@@ -209,7 +231,8 @@ const Index = () => {
                   <Button
                     key={page}
                     variant={currentPage === page ? "default" : "outline"}
-                    onClick={() => setCurrentPage(page)}
+                    onClick={() => handlePageChange(page)}
+                    disabled={isLoading}
                     className="w-10"
                   >
                     {page}
@@ -219,8 +242,8 @@ const Index = () => {
                 <Button
                   variant="outline"
                   size="icon"
-                  onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
-                  disabled={currentPage === totalPages}
+                  onClick={() => handlePageChange(currentPage + 1)}
+                  disabled={currentPage === totalPages || isLoading}
                 >
                   <ChevronRight className="w-4 h-4" />
                 </Button>
