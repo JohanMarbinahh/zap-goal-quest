@@ -5,16 +5,20 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { useEffect } from "react";
 import { initNDK, setupAuth } from "@/lib/ndk";
+import { useAppSelector } from "@/stores/hooks";
 import Index from "./pages/Index";
 import GoalDetail from "./pages/GoalDetail";
 import MyGoals from "./pages/MyGoals";
 import Settings from "./pages/Settings";
+import Login from "./pages/Login";
 import NotFound from "./pages/NotFound";
 import { Header } from "@/components/Header";
 
 const queryClient = new QueryClient();
 
 const App = () => {
+  const isAuthenticated = useAppSelector((state) => !!state.auth.pubkey);
+
   useEffect(() => {
     const init = async () => {
       try {
@@ -34,12 +38,13 @@ const App = () => {
         <Sonner />
         <BrowserRouter>
           <div className="min-h-screen bg-background">
-            <Header />
+            {isAuthenticated && <Header />}
             <Routes>
-              <Route path="/" element={<Index />} />
-              <Route path="/goal/:id" element={<GoalDetail />} />
-              <Route path="/me" element={<MyGoals />} />
-              <Route path="/settings" element={<Settings />} />
+              <Route path="/login" element={<Login />} />
+              <Route path="/" element={isAuthenticated ? <Index /> : <Login />} />
+              <Route path="/goal/:id" element={isAuthenticated ? <GoalDetail /> : <Login />} />
+              <Route path="/me" element={isAuthenticated ? <MyGoals /> : <Login />} />
+              <Route path="/settings" element={isAuthenticated ? <Settings /> : <Login />} />
               <Route path="*" element={<NotFound />} />
             </Routes>
           </div>
