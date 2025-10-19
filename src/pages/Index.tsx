@@ -2,8 +2,8 @@ import { useEffect, useState, useMemo, useCallback } from 'react';
 import { Plus, ChevronLeft, ChevronRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { GoalCard } from '@/components/GoalCard';
+import { GoalCardSkeleton } from '@/components/GoalCardSkeleton';
 import { CreateGoalDialog } from '@/components/CreateGoalDialog';
-import { Spinner } from '@/components/ui/spinner';
 import { useAppDispatch, useAppSelector } from '@/stores/hooks';
 import { setGoal } from '@/stores/goalsSlice';
 import { setProfile } from '@/stores/profilesSlice';
@@ -17,6 +17,7 @@ const Index = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [loadedPages, setLoadedPages] = useState<Set<number>>(new Set([1]));
   const [isLoading, setIsLoading] = useState(false);
+  const [initialLoading, setInitialLoading] = useState(true);
   const dispatch = useAppDispatch();
   const allGoals = useAppSelector((state) => Object.values(state.goals.goals));
   
@@ -50,6 +51,7 @@ const Index = () => {
   useEffect(() => {
     // Skip if already subscribed
     if (allGoals.length > 0) {
+      setInitialLoading(false);
       return;
     }
     
@@ -88,6 +90,10 @@ const Index = () => {
           if (goal) {
             dispatch(setGoal({ goalId: goal.goalId, goal }));
           }
+        });
+
+        goalSub.on('eose', () => {
+          setInitialLoading(false);
         });
 
         // Subscribe to kind 0 (profiles)
@@ -144,7 +150,13 @@ const Index = () => {
           </Button>
         </div>
 
-        {goals.length === 0 ? (
+        {initialLoading ? (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {Array.from({ length: 6 }).map((_, i) => (
+              <GoalCardSkeleton key={i} />
+            ))}
+          </div>
+        ) : goals.length === 0 ? (
           <div className="text-center py-20">
             <div className="inline-flex p-6 rounded-full bg-primary/10 mb-4">
               <Plus className="w-12 h-12 text-primary" />
@@ -161,8 +173,10 @@ const Index = () => {
         ) : (
           <>
             {isLoading ? (
-              <div className="flex justify-center items-center py-20">
-                <Spinner size="lg" />
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {Array.from({ length: 6 }).map((_, i) => (
+                  <GoalCardSkeleton key={i} />
+                ))}
               </div>
             ) : (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
