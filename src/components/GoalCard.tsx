@@ -1,6 +1,6 @@
 import { memo, useMemo, useState } from 'react';
-import { Link } from 'react-router-dom';
-import { ExternalLink, Zap, ChevronDown, ChevronUp } from 'lucide-react';
+import { Link, useNavigate } from 'react-router-dom';
+import { Zap, ChevronDown, ChevronUp } from 'lucide-react';
 import { Card, CardContent, CardFooter, CardHeader } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
@@ -17,6 +17,7 @@ interface GoalCardProps {
 
 export const GoalCard = memo(({ goal }: GoalCardProps) => {
   const [isExpanded, setIsExpanded] = useState(false);
+  const navigate = useNavigate();
   const profile = useAppSelector((state) => state.profiles.profiles[goal.authorPubkey]);
   const zaps = useAppSelector((state) => state.zaps.zapsByGoal[goal.eventId] || []);
   
@@ -27,16 +28,29 @@ export const GoalCard = memo(({ goal }: GoalCardProps) => {
     return { raised: totalRaised, progress: progressPercent };
   }, [zaps, goal.targetSats]);
 
-  const handleFund = () => {
+  const handleFund = (e: React.MouseEvent) => {
+    e.stopPropagation();
     if (profile?.lud16) {
       window.open(`lightning:${profile.lud16}`, '_blank');
     }
+  };
+
+  const handleCardClick = () => {
+    navigate(`/goal/${goal.goalId}`);
+  };
+
+  const handleExpandClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    setIsExpanded(!isExpanded);
   };
   
   const hasSummary = goal.summary && goal.summary.trim().length > 0;
 
   return (
-    <Card className="overflow-hidden group hover:shadow-lg hover:shadow-primary/20 transition-all duration-300 border-border/50">
+    <Card 
+      className="overflow-hidden group hover:shadow-lg hover:shadow-primary/20 transition-all duration-300 border-border/50 cursor-pointer" 
+      onClick={handleCardClick}
+    >
       {goal.imageUrl && (
         <div className="aspect-video overflow-hidden bg-muted">
           <img
@@ -76,7 +90,7 @@ export const GoalCard = memo(({ goal }: GoalCardProps) => {
             </div>
             {goal.summary && goal.summary.length > 100 && (
               <button
-                onClick={() => setIsExpanded(!isExpanded)}
+                onClick={handleExpandClick}
                 className="text-xs text-primary hover:underline flex items-center gap-1"
               >
                 {isExpanded ? (
@@ -103,11 +117,11 @@ export const GoalCard = memo(({ goal }: GoalCardProps) => {
         </div>
       </CardContent>
 
-      <CardFooter className="pt-0 gap-2">
+      <CardFooter className="pt-0">
         <TooltipProvider>
           <Tooltip>
             <TooltipTrigger asChild>
-              <div className="flex-1">
+              <div className="w-full">
                 <Button
                   variant="default"
                   className="w-full gap-2"
@@ -115,7 +129,7 @@ export const GoalCard = memo(({ goal }: GoalCardProps) => {
                   disabled={!profile?.lud16}
                 >
                   <Zap className="w-4 h-4" fill="currentColor" />
-                  Fund
+                  Fund Goal
                 </Button>
               </div>
             </TooltipTrigger>
@@ -126,12 +140,6 @@ export const GoalCard = memo(({ goal }: GoalCardProps) => {
             )}
           </Tooltip>
         </TooltipProvider>
-        <Link to={`/goal/${goal.goalId}`} className="flex-1">
-          <Button variant="outline" className="w-full gap-2">
-            View
-            <ExternalLink className="w-4 h-4" />
-          </Button>
-        </Link>
       </CardFooter>
     </Card>
   );
