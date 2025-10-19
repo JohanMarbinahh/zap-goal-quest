@@ -76,26 +76,18 @@ export const GoalCard = memo(({ goal }: GoalCardProps) => {
             </AvatarFallback>
           </Avatar>
           <div className="flex-1 min-w-0">
-            {goal.title || goal.name ? (
-              <h3 className="font-semibold text-lg leading-tight truncate">
-                {goal.title || goal.name}
-              </h3>
-            ) : (
-              <Skeleton className="h-6 w-3/4 mb-2" />
-            )}
-            {profile ? (
-              <p className="text-sm text-muted-foreground">
-                by {profile?.displayName || profile?.name || shortNpub(goal.authorPubkey)}
-              </p>
-            ) : (
-              <Skeleton className="h-4 w-1/2" />
-            )}
+            <h3 className="font-semibold text-lg leading-tight truncate">
+              {goal.title || goal.name || 'Untitled Goal'}
+            </h3>
+            <p className="text-sm text-muted-foreground">
+              by {profile?.displayName || profile?.name || shortNpub(goal.authorPubkey)}
+            </p>
           </div>
         </div>
       </CardHeader>
 
       <CardContent className="space-y-4">
-        {hasSummary ? (
+        {hasSummary && (
           <div className="space-y-2">
             <div 
               className={`text-sm text-muted-foreground ${!isExpanded ? 'line-clamp-2' : ''}`}
@@ -114,11 +106,6 @@ export const GoalCard = memo(({ goal }: GoalCardProps) => {
                 )}
               </button>
             )}
-          </div>
-        ) : (
-          <div className="space-y-2">
-            <Skeleton className="h-4 w-full" />
-            <Skeleton className="h-4 w-5/6" />
           </div>
         )}
         
