@@ -18,13 +18,13 @@ const Index = () => {
   const allGoals = useAppSelector((state) => Object.values(state.goals.goals));
   const currentUserPubkey = useAppSelector((state) => state.auth.pubkey);
   
-  // Show ALL goals on homepage
-  const goals = allGoals;
+  // Show ALL goals on homepage, limited to 100
+  const goals = allGoals.slice(0, 100);
   
   console.log('🏠 Homepage state:', {
     goalsInState: Object.keys(goalsState.goals).length,
-    goalsArray: goals.length,
-    goalIds: Object.keys(goalsState.goals),
+    goalsDisplayed: goals.length,
+    goalIds: Object.keys(goalsState.goals).slice(0, 5),
     firstGoal: goals[0],
   });
 
