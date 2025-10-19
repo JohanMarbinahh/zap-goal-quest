@@ -28,7 +28,7 @@ export function parseGoal9041(event: NDKEvent): Goal9041 | null {
     const goalTag = event.tags.find((t) => t[0] === 'goal');
     const amountTag = event.tags.find((t) => t[0] === 'amount');
     const closedTag = event.tags.find((t) => t[0] === 'closed_at');
-    const zapSplitTag = event.tags.find((t) => t[0] === 'zap_split');
+    const imageTag = event.tags.find((t) => t[0] === 'image')?.[1];
     
     let targetSats = 0;
     
@@ -54,13 +54,14 @@ export function parseGoal9041(event: NDKEvent): Goal9041 | null {
 
     // Try to parse content for metadata
     let title = '';
-    let imageUrl = '';
+    let imageUrl = imageTag || ''; // Start with image tag if exists
     let status = closedTag ? 'closed' : 'active';
     
     try {
       const content = JSON.parse(event.content);
       title = content.title || content.name || content.description || content.summary || '';
-      imageUrl = content.image || content.imageUrl || content.picture || '';
+      // Use content image if no tag image, or if content has one
+      imageUrl = content.image || content.imageUrl || content.picture || imageUrl;
       status = content.status || status;
     } catch {
       // If content is not JSON, use it as title (clean it up)
