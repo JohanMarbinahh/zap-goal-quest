@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Plus } from 'lucide-react';
+import { Plus, ChevronLeft, ChevronRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { GoalCard } from '@/components/GoalCard';
 import { CreateGoalDialog } from '@/components/CreateGoalDialog';
@@ -13,19 +13,28 @@ import { NDKFilter } from '@nostr-dev-kit/ndk';
 
 const Index = () => {
   const [isCreateOpen, setIsCreateOpen] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
   const dispatch = useAppDispatch();
   const goalsState = useAppSelector((state) => state.goals);
   const allGoals = useAppSelector((state) => Object.values(state.goals.goals));
-  const currentUserPubkey = useAppSelector((state) => state.auth.pubkey);
   
-  // Show ALL goals on homepage, limited to 100
-  const goals = allGoals.slice(0, 100);
+  const GOALS_PER_PAGE = 100;
+  const MAX_PAGES = 5;
+  const totalGoals = Math.min(allGoals.length, GOALS_PER_PAGE * MAX_PAGES);
+  const totalPages = Math.min(Math.ceil(allGoals.length / GOALS_PER_PAGE), MAX_PAGES);
+  
+  // Calculate goals for current page
+  const startIndex = (currentPage - 1) * GOALS_PER_PAGE;
+  const endIndex = startIndex + GOALS_PER_PAGE;
+  const goals = allGoals.slice(startIndex, endIndex);
   
   console.log('🏠 Homepage state:', {
     goalsInState: Object.keys(goalsState.goals).length,
+    currentPage,
+    totalPages,
     goalsDisplayed: goals.length,
-    goalIds: Object.keys(goalsState.goals).slice(0, 5),
-    firstGoal: goals[0],
+    startIndex,
+    endIndex,
   });
 
   useEffect(() => {
@@ -177,11 +186,47 @@ const Index = () => {
             </Button>
           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {goals.map((goal) => (
-              <GoalCard key={goal.goalId} goal={goal} />
-            ))}
-          </div>
+          <>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {goals.map((goal) => (
+                <GoalCard key={goal.goalId} goal={goal} />
+              ))}
+            </div>
+            
+            {/* Pagination Controls */}
+            {totalPages > 1 && (
+              <div className="flex items-center justify-center gap-2 mt-8">
+                <Button
+                  variant="outline"
+                  size="icon"
+                  onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                  disabled={currentPage === 1}
+                >
+                  <ChevronLeft className="w-4 h-4" />
+                </Button>
+                
+                {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
+                  <Button
+                    key={page}
+                    variant={currentPage === page ? "default" : "outline"}
+                    onClick={() => setCurrentPage(page)}
+                    className="w-10"
+                  >
+                    {page}
+                  </Button>
+                ))}
+                
+                <Button
+                  variant="outline"
+                  size="icon"
+                  onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                  disabled={currentPage === totalPages}
+                >
+                  <ChevronRight className="w-4 h-4" />
+                </Button>
+              </div>
+            )}
+          </>
         )}
       </div>
 
