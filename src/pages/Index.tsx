@@ -21,8 +21,8 @@ const Index = () => {
       try {
         const ndk = getNDK();
 
-        // Subscribe to kind 9041 (goals)
-        const goalFilter: NDKFilter = { kinds: [9041 as any], limit: 100 };
+        // Subscribe to kind 9041 (goals) - fetch all goals from relay pool
+        const goalFilter: NDKFilter = { kinds: [9041 as any], limit: 500 };
         const goalSub = ndk.subscribe(goalFilter);
 
         goalSub.on('event', (event) => {
