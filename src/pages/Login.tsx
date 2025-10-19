@@ -6,7 +6,7 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
 import { Zap } from 'lucide-react';
-import { loginWithPrivateKey, loginWithNip07 } from '@/lib/ndk';
+import { loginWithPrivateKey } from '@/lib/ndk';
 
 export default function Login() {
   const [privateKey, setPrivateKey] = useState('');
@@ -44,25 +44,6 @@ export default function Login() {
     }
   };
 
-  const handleNip07Login = async () => {
-    setLoading(true);
-    try {
-      await loginWithNip07();
-      toast({
-        title: 'Success',
-        description: 'Logged in with browser extension',
-      });
-      navigate('/');
-    } catch (error) {
-      toast({
-        title: 'Authentication failed',
-        description: error instanceof Error ? error.message : 'Browser extension not found',
-        variant: 'destructive',
-      });
-    } finally {
-      setLoading(false);
-    }
-  };
 
   return (
     <div className="min-h-screen flex items-center justify-center p-4 bg-gradient-to-b from-background to-muted">
@@ -94,46 +75,6 @@ export default function Login() {
               {loading ? 'Signing in...' : 'Sign in with Private Key'}
             </Button>
           </form>
-
-          <div className="relative">
-            <div className="absolute inset-0 flex items-center">
-              <span className="w-full border-t" />
-            </div>
-            <div className="relative flex justify-center text-xs uppercase">
-              <span className="bg-card px-2 text-muted-foreground">Or</span>
-            </div>
-          </div>
-
-          <Button
-            type="button"
-            variant="outline"
-            className="w-full"
-            onClick={handleNip07Login}
-            disabled={loading}
-          >
-            Sign in with Browser Extension
-          </Button>
-
-          <p className="text-xs text-center text-muted-foreground">
-            Don't have a Nostr key? Get a browser extension like{' '}
-            <a
-              href="https://getalby.com"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-primary hover:underline"
-            >
-              Alby
-            </a>{' '}
-            or{' '}
-            <a
-              href="https://github.com/fiatjaf/nos2x"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-primary hover:underline"
-            >
-              nos2x
-            </a>
-          </p>
         </CardContent>
       </Card>
     </div>

@@ -9,7 +9,7 @@ import { toast } from '@/hooks/use-toast';
 
 export const Header = () => {
   const dispatch = useAppDispatch();
-  const { npub, isNip07 } = useAppSelector((state) => state.auth);
+  const { npub } = useAppSelector((state) => state.auth);
 
   const handleLogout = () => {
     dispatch(logout());
@@ -36,7 +36,7 @@ export const Header = () => {
           
           {npub && (
             <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-secondary border border-border">
-              <div className={`w-2 h-2 rounded-full ${isNip07 ? 'bg-success' : 'bg-accent'}`} />
+              <div className="w-2 h-2 rounded-full bg-success" />
               <span className="text-sm font-mono text-muted-foreground">
                 {shortNpub(npub)}
               </span>

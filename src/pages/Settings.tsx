@@ -16,7 +16,6 @@ const Settings = () => {
   const relays = useAppSelector((state) => state.relays.relays);
   const relayStatuses = useAppSelector((state) => state.relays.relayStatuses);
   const npub = useAppSelector((state) => state.auth.npub);
-  const isNip07 = useAppSelector((state) => state.auth.isNip07);
 
   const handleAddRelay = () => {
     if (!newRelay) return;

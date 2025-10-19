@@ -1,4 +1,4 @@
-import NDK, { NDKEvent, NDKNip07Signer, NDKPrivateKeySigner } from '@nostr-dev-kit/ndk';
+import NDK, { NDKEvent, NDKPrivateKeySigner } from '@nostr-dev-kit/ndk';
 import { store } from '@/stores/store';
 import { updateRelayStatus } from '@/stores/relaysSlice';
 import { setPubkey } from '@/stores/authSlice';
@@ -38,25 +38,8 @@ export async function setupAuth() {
   const authState = store.getState().auth;
 
   // If already authenticated with private key, restore signer
-  if (authState.pubkey && !authState.isNip07) {
-    // User logged in with private key previously
-    return { pubkey: authState.pubkey, npub: authState.npub, isNip07: false };
-  }
-
-  // Try NIP-07 if available
-  if (window.nostr && authState.isNip07) {
-    try {
-      const signer = new NDKNip07Signer();
-      ndk.signer = signer;
-
-      const user = await signer.user();
-      const npub = nip19.npubEncode(user.pubkey);
-
-      store.dispatch(setPubkey({ pubkey: user.pubkey, npub, isNip07: true }));
-      return { pubkey: user.pubkey, npub, isNip07: true };
-    } catch (error) {
-      console.error('NIP-07 auth failed:', error);
-    }
+  if (authState.pubkey) {
+    return { pubkey: authState.pubkey, npub: authState.npub };
   }
 
   return null;
@@ -84,35 +67,14 @@ export async function loginWithPrivateKey(privateKey: string) {
     const user = await signer.user();
     const npub = nip19.npubEncode(user.pubkey);
 
-    store.dispatch(setPubkey({ pubkey: user.pubkey, npub, isNip07: false }));
-    return { pubkey: user.pubkey, npub, isNip07: false };
+    store.dispatch(setPubkey({ pubkey: user.pubkey, npub }));
+    return { pubkey: user.pubkey, npub };
   } catch (error) {
     console.error('Private key login failed:', error);
     throw new Error('Invalid private key format');
   }
 }
 
-export async function loginWithNip07() {
-  const ndk = getNDK();
-  
-  if (!window.nostr) {
-    throw new Error('No Nostr browser extension found');
-  }
-
-  try {
-    const signer = new NDKNip07Signer();
-    ndk.signer = signer;
-
-    const user = await signer.user();
-    const npub = nip19.npubEncode(user.pubkey);
-
-    store.dispatch(setPubkey({ pubkey: user.pubkey, npub, isNip07: true }));
-    return { pubkey: user.pubkey, npub, isNip07: true };
-  } catch (error) {
-    console.error('NIP-07 login failed:', error);
-    throw new Error('Browser extension authentication failed');
-  }
-}
 
 export async function publishEvent(event: NDKEvent) {
   const ndk = getNDK();
