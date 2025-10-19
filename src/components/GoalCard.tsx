@@ -136,3 +136,6 @@ export const GoalCard = memo(({ goal }: GoalCardProps) => {
 });
 
 GoalCard.displayName = 'GoalCard';
+
+// Optimize re-renders by only updating when goal data actually changes
+export default GoalCard;
