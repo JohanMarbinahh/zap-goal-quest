@@ -1,6 +1,7 @@
 import { useEffect, useState, useMemo, useCallback } from 'react';
 import { Plus, ChevronLeft, ChevronRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { Spinner } from '@/components/ui/spinner';
 import { GoalCard } from '@/components/GoalCard';
 import { CreateGoalDialog } from '@/components/CreateGoalDialog';
 import { useAppDispatch, useAppSelector } from '@/stores/hooks';
@@ -150,8 +151,9 @@ const Index = () => {
         </div>
 
         {initialLoading ? (
-          <div className="text-center py-20">
-            <div className="text-muted-foreground">Loading goals...</div>
+          <div className="flex flex-col items-center justify-center py-20 gap-4">
+            <Spinner size="lg" />
+            <p className="text-muted-foreground">Loading goals...</p>
           </div>
         ) : goals.length === 0 ? (
           <div className="text-center py-20">
