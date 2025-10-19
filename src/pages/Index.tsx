@@ -48,6 +48,11 @@ const Index = () => {
   }, [currentPage, totalPages, loadedPages]);
 
   useEffect(() => {
+    // Skip if already subscribed
+    if (allGoals.length > 0) {
+      return;
+    }
+    
     let goalSub: NDKSubscription | null = null;
     let profileSub: NDKSubscription | null = null;
     let zapSub: NDKSubscription | null = null;
@@ -74,7 +79,7 @@ const Index = () => {
           return;
         }
 
-        // Subscribe to kind 9041 (goals) - reduced limit for better performance
+        // Subscribe to kind 9041 (goals)
         const goalFilter: NDKFilter = { kinds: [9041 as any], limit: 500 };
         goalSub = ndk.subscribe(goalFilter, { closeOnEose: false });
 
@@ -85,7 +90,7 @@ const Index = () => {
           }
         });
 
-        // Subscribe to kind 0 (profiles) - fetch only when needed
+        // Subscribe to kind 0 (profiles)
         const profileFilter: NDKFilter = { kinds: [0], limit: 50 };
         profileSub = ndk.subscribe(profileFilter);
 
@@ -96,7 +101,7 @@ const Index = () => {
           }
         });
 
-        // Subscribe to kind 9735 (zaps) - reduced limit
+        // Subscribe to kind 9735 (zaps)
         const zapFilter: NDKFilter = { kinds: [9735 as any], limit: 200 };
         zapSub = ndk.subscribe(zapFilter);
 
@@ -119,7 +124,7 @@ const Index = () => {
       if (profileSub) profileSub.stop();
       if (zapSub) zapSub.stop();
     };
-  }, [dispatch]);
+  }, [dispatch]); // Only run once on mount, skip if data already exists
 
   return (
     <main className="container mx-auto px-4 py-8">

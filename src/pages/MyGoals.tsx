@@ -46,7 +46,8 @@ const MyGoals = () => {
     };
 
     fetchProfile();
-  }, [pubkey, dispatch, profile]);
+    // Only run when pubkey changes, not when profile changes
+  }, [pubkey, dispatch]);
 
   return (
     <main className="container mx-auto px-4 py-8">
