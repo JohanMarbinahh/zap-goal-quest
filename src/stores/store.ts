@@ -26,14 +26,8 @@ export const store = configureStore({
     relays: persistedRelaysReducer,
     profiles: profilesReducer,
     goals: goalsReducer,
-    zaps: zapsReducer,
-  },
-  middleware: (getDefaultMiddleware) =>
-    getDefaultMiddleware({
-      serializableCheck: {
-        ignoredActions: [FLUSH, REHYDRATE, PAUSE, PERSIST, PURGE, REGISTER],
-      },
-    }),
+    zaps: zapsReducer
+  }
 });
 
 export const persistor = persistStore(store);

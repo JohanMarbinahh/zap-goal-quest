@@ -1,11 +1,7 @@
 import { createSlice, PayloadAction } from '@reduxjs/toolkit';
 import { Profile } from '@/types/nostr';
 
-interface ProfilesState {
-  profiles: Record<string, Profile>;
-}
-
-const initialState: ProfilesState = {
+const initialState = {
   profiles: {},
 };
 

@@ -35,9 +35,8 @@ export const RelayStatus = () => {
             {relayStatuses.map((relay) => (
               <div key={relay.url} className="flex items-center gap-2 text-xs">
                 <div
-                  className={`w-2 h-2 rounded-full ${
-                    relay.connected ? 'bg-success' : 'bg-destructive'
-                  }`}
+                  className={`w-2 h-2 rounded-full ${relay.connected ? 'bg-success' : 'bg-destructive'
+                    }`}
                 />
                 <span className="font-mono">{new URL(relay.url).hostname}</span>
               </div>
@@ -45,6 +44,5 @@ export const RelayStatus = () => {
           </div>
         </TooltipContent>
       </Tooltip>
-    </TooltipProvider>
-  );
+    </TooltipProvider>)
 };
