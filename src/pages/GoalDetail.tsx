@@ -1,6 +1,6 @@
 import { useParams, useNavigate } from 'react-router-dom';
 import { useState } from 'react';
-import { ArrowLeft, Zap, ThumbsUp, Calendar, Target, Hash, Info, Copy, Check, Globe, MapPin, AtSign } from 'lucide-react';
+import { ArrowLeft, Zap, ThumbsUp, Calendar, Target, Hash, Info, Copy, Check } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
@@ -117,35 +117,25 @@ const GoalDetail = () => {
             
             {/* Author Card */}
             <Card className="mb-4">
-              {profile?.banner && (
-                <div className="h-24 w-full overflow-hidden rounded-t-lg">
-                  <img 
-                    src={profile.banner} 
-                    alt="Profile banner" 
-                    className="w-full h-full object-cover"
-                  />
-                </div>
-              )}
-              <CardHeader className={profile?.banner ? 'pt-3' : ''}>
-                <div className="flex items-start gap-3">
-                  <Avatar className="w-16 h-16 border-2 border-primary/20">
+              <CardHeader>
+                <div className="flex items-center gap-3">
+                  <Avatar className="w-12 h-12 border-2 border-primary/20">
                     <AvatarImage src={profile?.picture} />
-                    <AvatarFallback className="bg-primary/10 text-primary text-lg">
+                    <AvatarFallback className="bg-primary/10 text-primary">
                       {profile?.name?.[0]?.toUpperCase() || 'A'}
                     </AvatarFallback>
                   </Avatar>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-xs text-muted-foreground mb-1">Created by</p>
-                    <div className="flex items-center gap-2 mb-1">
-                      <p className="font-bold text-lg">
-                        {profile?.displayName || profile?.display_name || profile?.name || shortNpub(goal.authorPubkey)}
+                  <div className="flex-1">
+                    <p className="text-sm text-muted-foreground">Created by</p>
+                    <div className="flex items-center gap-2">
+                      <p className="font-semibold">
+                        {profile?.displayName || profile?.name || shortNpub(goal.authorPubkey)}
                       </p>
                       <Button
                         variant="ghost"
                         size="sm"
-                        className="h-6 w-6 p-0 shrink-0"
+                        className="h-6 w-6 p-0"
                         onClick={handleCopyPubkey}
-                        title="Copy public key"
                       >
                         {copiedPubkey ? (
                           <Check className="w-3 h-3 text-success" />
@@ -154,56 +144,17 @@ const GoalDetail = () => {
                         )}
                       </Button>
                     </div>
-                    {profile?.name && profile?.name !== profile?.displayName && (
-                      <p className="text-sm text-muted-foreground">@{profile.name}</p>
-                    )}
                   </div>
                 </div>
               </CardHeader>
-              <CardContent className="pt-0 space-y-3">
-                {profile?.about && (
+              {profile?.about && (
+                <CardContent className="pt-0">
                   <p className="text-sm text-muted-foreground">{profile.about}</p>
-                )}
-                
-                <div className="space-y-2">
-                  {profile?.nip05 && (
-                    <div className="flex items-center gap-2 text-sm">
-                      <AtSign className="w-4 h-4 text-muted-foreground shrink-0" />
-                      <span className="text-muted-foreground truncate">{profile.nip05}</span>
-                    </div>
+                  {profile.lud16 && (
+                    <p className="text-xs text-muted-foreground mt-2">⚡ {profile.lud16}</p>
                   )}
-                  
-                  {profile?.website && (
-                    <div className="flex items-center gap-2 text-sm">
-                      <Globe className="w-4 h-4 text-muted-foreground shrink-0" />
-                      <a 
-                        href={profile.website} 
-                        target="_blank" 
-                        rel="noopener noreferrer"
-                        className="text-primary hover:underline truncate"
-                      >
-                        {profile.website.replace(/^https?:\/\//, '')}
-                      </a>
-                    </div>
-                  )}
-                  
-                  {profile?.location && (
-                    <div className="flex items-center gap-2 text-sm">
-                      <MapPin className="w-4 h-4 text-muted-foreground shrink-0" />
-                      <span className="text-muted-foreground">{profile.location}</span>
-                    </div>
-                  )}
-                  
-                  {profile?.lud16 && (
-                    <div className="flex items-center gap-2 text-sm">
-                      <Zap className="w-4 h-4 text-accent shrink-0" />
-                      <span className="text-muted-foreground font-mono text-xs truncate">
-                        {profile.lud16}
-                      </span>
-                    </div>
-                  )}
-                </div>
-              </CardContent>
+                </CardContent>
+              )}
             </Card>
 
             {/* Goal Metadata */}
