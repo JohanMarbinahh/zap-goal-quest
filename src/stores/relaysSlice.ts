@@ -10,19 +10,21 @@ interface RelaysState {
   relayStatuses: RelayStatus[];
 }
 
+const DEFAULT_RELAYS = [
+  'wss://relay.damus.io',
+  'wss://nostr.wine',
+  'wss://relay.primal.net',
+  'wss://nos.lol',
+  'wss://relay.snort.social',
+  'wss://relay.nostr.band',
+  'wss://eden.nostr.land',
+  'wss://nostr.fmt.wiz.biz',
+  'wss://relay.orangepill.dev',
+  'wss://nostr-pub.wellorder.net',
+];
+
 const initialState: RelaysState = {
-  relays: [
-    'wss://relay.damus.io',
-    'wss://nostr.wine',
-    'wss://relay.primal.net',
-    'wss://nos.lol',
-    'wss://relay.snort.social',
-    'wss://relay.nostr.band',
-    'wss://eden.nostr.land',
-    'wss://nostr.fmt.wiz.biz',
-    'wss://relay.orangepill.dev',
-    'wss://nostr-pub.wellorder.net',
-  ],
+  relays: DEFAULT_RELAYS,
   relayStatuses: [],
 };
 
@@ -44,8 +46,17 @@ const relaysSlice = createSlice({
         state.relayStatuses.push({ url: action.payload.url, connected: action.payload.connected });
       }
     },
+    mergeDefaultRelays: (state) => {
+      // Add any default relays that aren't already in the list
+      const uniqueRelays = new Set(state.relays);
+      DEFAULT_RELAYS.forEach(relay => {
+        if (!uniqueRelays.has(relay)) {
+          state.relays.push(relay);
+        }
+      });
+    },
   },
 });
 
-export const { addRelay, removeRelay, updateRelayStatus } = relaysSlice.actions;
+export const { addRelay, removeRelay, updateRelayStatus, mergeDefaultRelays } = relaysSlice.actions;
 export default relaysSlice.reducer;

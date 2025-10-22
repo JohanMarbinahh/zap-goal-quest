@@ -1,12 +1,14 @@
 import NDK, { NDKEvent, NDKPrivateKeySigner } from '@nostr-dev-kit/ndk';
 import { store } from '@/stores/store';
-import { updateRelayStatus } from '@/stores/relaysSlice';
+import { updateRelayStatus, mergeDefaultRelays } from '@/stores/relaysSlice';
 import { setPubkey } from '@/stores/authSlice';
 import { nip19 } from 'nostr-tools';
 
 let ndkInstance: NDK | null = null;
 
 export async function initNDK() {
+  // Ensure default relays are merged with persisted ones
+  store.dispatch(mergeDefaultRelays());
   const relays = store.getState().relays.relays;
 
   ndkInstance = new NDK({
