@@ -132,14 +132,19 @@ const Index = () => {
         });
 
         // Subscribe to kind 9735 (zaps)
-        const zapFilter: NDKFilter = { kinds: [9735 as any], limit: 200 };
-        zapSub = ndk.subscribe(zapFilter);
+        const zapFilter: NDKFilter = { kinds: [9735 as any], limit: 1000 };
+        zapSub = ndk.subscribe(zapFilter, { closeOnEose: false });
 
         zapSub.on('event', (event) => {
           const zap = parseZap9735(event);
           if (zap) {
+            console.log('Received zap:', zap);
             dispatch(addZap(zap));
           }
+        });
+        
+        zapSub.on('eose', () => {
+          console.log('Zap subscription complete');
         });
 
         // Subscribe to kind 3 (contact lists) - only if user is logged in
