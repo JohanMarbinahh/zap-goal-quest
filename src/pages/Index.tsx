@@ -5,21 +5,31 @@ import { Button } from '@/components/ui/button';
 import { Spinner } from '@/components/ui/spinner';
 import { GoalCard } from '@/components/GoalCard';
 import { CreateGoalDialog } from '@/components/CreateGoalDialog';
+import { GoalsFilter, FilterType, SortType } from '@/components/GoalsFilter';
 import { useAppDispatch, useAppSelector } from '@/stores/hooks';
 import { setGoal } from '@/stores/goalsSlice';
 import { setProfile } from '@/stores/profilesSlice';
 import { addZap } from '@/stores/zapsSlice';
+import { setFollowing } from '@/stores/contactsSlice';
 import { selectEnrichedGoals } from '@/stores/selectors';
 import { getNDK } from '@/lib/ndk';
 import { parseGoal9041, parseProfile, parseZap9735 } from '@/lib/nostrHelpers';
+import { filterGoals, sortGoals } from '@/lib/filterHelpers';
 import { NDKFilter, NDKSubscription } from '@nostr-dev-kit/ndk';
 
 const Index = () => {
   const [searchParams, setSearchParams] = useSearchParams();
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const currentPage = parseInt(searchParams.get('page') || '1', 10);
+  const [filter, setFilter] = useState<FilterType>('all');
+  const [sort, setSort] = useState<SortType>('recent');
+  
   const dispatch = useAppDispatch();
   const allGoals = useAppSelector(selectEnrichedGoals);
+  const userPubkey = useAppSelector((state) => state.auth.pubkey);
+  const followingList = useAppSelector((state) => 
+    userPubkey ? state.contacts.following[userPubkey] || [] : []
+  );
   
   // Initialize loading state based on whether we already have goals
   const [initialLoading, setInitialLoading] = useState(allGoals.length === 0);
@@ -27,20 +37,39 @@ const Index = () => {
   const GOALS_PER_PAGE = 30;
   const MAX_PAGES = 5;
   
-  // Memoize pagination calculations
-  const { totalPages, goals } = useMemo(() => {
-    const pages = Math.min(Math.ceil(allGoals.length / GOALS_PER_PAGE), MAX_PAGES);
+  // Memoize filtering, sorting, and pagination calculations
+  const { totalPages, goals, totalGoalsCount, filteredGoalsCount } = useMemo(() => {
+    const filtered = filterGoals(allGoals, filter, followingList);
+    const sorted = sortGoals(filtered, sort);
+    
+    const pages = Math.min(Math.ceil(sorted.length / GOALS_PER_PAGE), MAX_PAGES);
     const startIndex = (currentPage - 1) * GOALS_PER_PAGE;
     const endIndex = startIndex + GOALS_PER_PAGE;
-    const pageGoals = allGoals.slice(startIndex, endIndex);
+    const pageGoals = sorted.slice(startIndex, endIndex);
     
-    return { totalPages: pages, goals: pageGoals };
-  }, [allGoals, currentPage, GOALS_PER_PAGE, MAX_PAGES]);
+    return { 
+      totalPages: pages, 
+      goals: pageGoals,
+      totalGoalsCount: allGoals.length,
+      filteredGoalsCount: sorted.length
+    };
+  }, [allGoals, currentPage, filter, sort, followingList, GOALS_PER_PAGE, MAX_PAGES]);
   
   const handlePageChange = useCallback((page: number) => {
     if (page === currentPage || page < 1 || page > totalPages) return;
     setSearchParams({ page: page.toString() });
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   }, [currentPage, totalPages, setSearchParams]);
+  
+  const handleFilterChange = useCallback((newFilter: FilterType) => {
+    setFilter(newFilter);
+    setSearchParams({ page: '1' });
+  }, [setSearchParams]);
+  
+  const handleSortChange = useCallback((newSort: SortType) => {
+    setSort(newSort);
+    setSearchParams({ page: '1' });
+  }, [setSearchParams]);
 
   useEffect(() => {
     // Skip if already subscribed
@@ -52,6 +81,7 @@ const Index = () => {
     let goalSub: NDKSubscription | null = null;
     let profileSub: NDKSubscription | null = null;
     let zapSub: NDKSubscription | null = null;
+    let contactSub: NDKSubscription | null = null;
     
     const subscribeToEvents = async () => {
       try {
@@ -111,6 +141,22 @@ const Index = () => {
             dispatch(addZap(zap));
           }
         });
+
+        // Subscribe to kind 3 (contact lists) - only if user is logged in
+        if (userPubkey) {
+          const contactFilter: NDKFilter = { kinds: [3], authors: [userPubkey] };
+          contactSub = ndk.subscribe(contactFilter);
+
+          contactSub.on('event', (event) => {
+            const following = event.tags
+              .filter(tag => tag[0] === 'p')
+              .map(tag => tag[1]);
+            
+            if (following.length > 0) {
+              dispatch(setFollowing({ pubkey: userPubkey, following }));
+            }
+          });
+        }
       } catch (error) {
         console.error('Failed to subscribe to events:', error);
       }
@@ -123,8 +169,9 @@ const Index = () => {
       if (goalSub) goalSub.stop();
       if (profileSub) profileSub.stop();
       if (zapSub) zapSub.stop();
+      if (contactSub) contactSub.stop();
     };
-  }, [dispatch]); // Only run once on mount, skip if data already exists
+  }, [dispatch, userPubkey]); // Only run once on mount, skip if data already exists
 
   return (
     <main className="container mx-auto px-4 py-8">
@@ -165,6 +212,16 @@ const Index = () => {
           </div>
         ) : (
           <>
+            <GoalsFilter
+              filter={filter}
+              sort={sort}
+              onFilterChange={handleFilterChange}
+              onSortChange={handleSortChange}
+              totalGoals={totalGoalsCount}
+              filteredGoals={filteredGoalsCount}
+              isLoggedIn={!!userPubkey}
+            />
+            
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {goals.map((goal) => (
                 <GoalCard key={goal.goalId} goal={goal} />

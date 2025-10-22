@@ -6,6 +6,7 @@ import relaysReducer from './relaysSlice';
 import profilesReducer from './profilesSlice';
 import goalsReducer from './goalsSlice';
 import zapsReducer from './zapsSlice';
+import contactsReducer from './contactsSlice';
 
 const authPersistConfig = {
   key: 'zapgoal-auth',
@@ -26,7 +27,8 @@ export const store = configureStore({
     relays: persistedRelaysReducer,
     profiles: profilesReducer,
     goals: goalsReducer,
-    zaps: zapsReducer
+    zaps: zapsReducer,
+    contacts: contactsReducer
   },
   middleware: (getDefaultMiddleware) =>
     getDefaultMiddleware({
