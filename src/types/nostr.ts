@@ -4,8 +4,14 @@ export interface Profile {
   displayName?: string;
   display_name?: string;
   picture?: string;
+  banner?: string;
   lud16?: string;
   about?: string;
+  nip05?: string;
+  website?: string;
+  location?: string;
+  twitter?: string;
+  github?: string;
 }
 
 export interface Goal9041 {
