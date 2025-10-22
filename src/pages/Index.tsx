@@ -82,9 +82,16 @@ const Index = () => {
     let profileSub: NDKSubscription | null = null;
     let zapSub: NDKSubscription | null = null;
     let contactSub: NDKSubscription | null = null;
+    let loadingTimeout: NodeJS.Timeout | null = null;
     
     const subscribeToEvents = async () => {
       try {
+        // Set a timeout to stop loading after 10 seconds regardless
+        loadingTimeout = setTimeout(() => {
+          console.log('Loading timeout - stopping spinner');
+          setInitialLoading(false);
+        }, 10000);
+
         // Wait for NDK to be initialized
         let ndk;
         let retries = 0;
@@ -102,6 +109,7 @@ const Index = () => {
 
         if (!ndk) {
           console.error('NDK failed to initialize');
+          setInitialLoading(false);
           return;
         }
 
@@ -117,6 +125,8 @@ const Index = () => {
         });
 
         goalSub.on('eose', () => {
+          console.log('Goal subscription eose received');
+          if (loadingTimeout) clearTimeout(loadingTimeout);
           setInitialLoading(false);
         });
 
@@ -175,6 +185,7 @@ const Index = () => {
       if (profileSub) profileSub.stop();
       if (zapSub) zapSub.stop();
       if (contactSub) contactSub.stop();
+      if (loadingTimeout) clearTimeout(loadingTimeout);
     };
   }, [dispatch, userPubkey]); // Only run once on mount, skip if data already exists
 
