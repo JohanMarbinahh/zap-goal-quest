@@ -1,6 +1,6 @@
 import { useParams, useNavigate } from 'react-router-dom';
 import { useState } from 'react';
-import { ArrowLeft, Zap, ThumbsUp, Calendar, Target, Hash, Info } from 'lucide-react';
+import { ArrowLeft, Zap, ThumbsUp, Calendar, Target, Hash, Info, Copy, Check } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
@@ -12,11 +12,13 @@ import { Separator } from '@/components/ui/separator';
 import { useAppSelector } from '@/stores/hooks';
 import { shortNpub } from '@/lib/ndk';
 import { formatSats, formatRelativeTime } from '@/lib/nostrHelpers';
+import { toast } from '@/hooks/use-toast';
 
 const GoalDetail = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const [excludeSelfZaps, setExcludeSelfZaps] = useState(true);
+  const [copiedPubkey, setCopiedPubkey] = useState(false);
   
   const goal = useAppSelector((state) => id ? state.goals.goals[id] : undefined);
   const profile = useAppSelector((state) => 
@@ -72,6 +74,26 @@ const GoalDetail = () => {
     }
   };
 
+  const handleCopyPubkey = async () => {
+    if (!goal?.authorPubkey) return;
+    
+    try {
+      await navigator.clipboard.writeText(goal.authorPubkey);
+      setCopiedPubkey(true);
+      toast({
+        title: 'Copied!',
+        description: 'Public key copied to clipboard',
+      });
+      setTimeout(() => setCopiedPubkey(false), 2000);
+    } catch (error) {
+      toast({
+        title: 'Failed to copy',
+        description: 'Could not copy public key',
+        variant: 'destructive',
+      });
+    }
+  };
+
   return (
     <main className="container mx-auto px-4 py-8">
       <div className="max-w-6xl mx-auto">
@@ -105,9 +127,23 @@ const GoalDetail = () => {
                   </Avatar>
                   <div className="flex-1">
                     <p className="text-sm text-muted-foreground">Created by</p>
-                    <p className="font-semibold">
-                      {profile?.displayName || profile?.name || shortNpub(goal.authorPubkey)}
-                    </p>
+                    <div className="flex items-center gap-2">
+                      <p className="font-semibold">
+                        {profile?.displayName || profile?.name || shortNpub(goal.authorPubkey)}
+                      </p>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="h-6 w-6 p-0"
+                        onClick={handleCopyPubkey}
+                      >
+                        {copiedPubkey ? (
+                          <Check className="w-3 h-3 text-success" />
+                        ) : (
+                          <Copy className="w-3 h-3" />
+                        )}
+                      </Button>
+                    </div>
                   </div>
                 </div>
               </CardHeader>
