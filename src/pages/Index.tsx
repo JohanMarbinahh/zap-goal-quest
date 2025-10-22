@@ -117,43 +117,21 @@ const Index = () => {
         const goalFilter: NDKFilter = { kinds: [9041 as any], limit: 500 };
         goalSub = ndk.subscribe(goalFilter, { closeOnEose: false });
 
-        // Track goal authors to fetch their profiles
-        const goalAuthors = new Set<string>();
-
         goalSub.on('event', (event) => {
           const goal = parseGoal9041(event);
           if (goal) {
             dispatch(setGoal({ goalId: goal.goalId, goal }));
-            goalAuthors.add(goal.authorPubkey);
           }
         });
 
         goalSub.on('eose', () => {
           console.log('Goal subscription eose received');
-          console.log(`Found ${goalAuthors.size} unique goal authors`);
-          
-          // Fetch profiles for all goal authors
-          if (goalAuthors.size > 0) {
-            const authorProfileFilter: NDKFilter = { 
-              kinds: [0], 
-              authors: Array.from(goalAuthors)
-            };
-            const authorProfileSub = ndk.subscribe(authorProfileFilter);
-            
-            authorProfileSub.on('event', (event) => {
-              const profile = parseProfile(event);
-              if (profile) {
-                dispatch(setProfile({ pubkey: profile.pubkey, profile }));
-              }
-            });
-          }
-          
           if (loadingTimeout) clearTimeout(loadingTimeout);
           setInitialLoading(false);
         });
 
-        // Subscribe to kind 0 (profiles) - general subscription for broader coverage
-        const profileFilter: NDKFilter = { kinds: [0], limit: 500 };
+        // Subscribe to kind 0 (profiles)
+        const profileFilter: NDKFilter = { kinds: [0], limit: 50 };
         profileSub = ndk.subscribe(profileFilter);
 
         profileSub.on('event', (event) => {
