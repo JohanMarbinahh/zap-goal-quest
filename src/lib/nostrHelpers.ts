@@ -1,5 +1,6 @@
 import { NDKEvent } from '@nostr-dev-kit/ndk';
 import { Goal9041, Profile, Zap9735, Reaction7 } from '@/types/nostr';
+import { decode } from 'light-bolt11-decoder';
 
 export function parseProfile(event: NDKEvent): Profile | null {
   try {
@@ -130,10 +131,18 @@ export function parseZap9735(event: NDKEvent): Zap9735 | null {
       amountMsat = parseInt(amountTag, 10);
     }
 
-    // TODO: Parse bolt11 for amount if not in tags
+    // Parse bolt11 invoice for amount if not in tags
     if (amountMsat === 0 && boltTag) {
-      // Placeholder - would need bolt11 parser
-      console.log('TODO: Parse bolt11 for amount');
+      try {
+        const decoded = decode(boltTag);
+        const amountSection = decoded.sections.find((s: any) => s.name === 'amount');
+        if (amountSection && 'value' in amountSection) {
+          // light-bolt11-decoder returns amount in millisatoshis
+          amountMsat = parseInt(String(amountSection.value), 10);
+        }
+      } catch (e) {
+        console.error('Failed to parse bolt11 invoice:', e);
+      }
     }
 
     return {
