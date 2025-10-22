@@ -17,6 +17,9 @@ import { parseGoal9041, parseProfile, parseZap9735 } from '@/lib/nostrHelpers';
 import { filterGoals, sortGoals } from '@/lib/filterHelpers';
 import { NDKFilter, NDKSubscription } from '@nostr-dev-kit/ndk';
 
+const GOALS_PER_PAGE = 30;
+const MAX_PAGES = 5;
+
 const Index = () => {
   const [searchParams, setSearchParams] = useSearchParams();
   const [isCreateOpen, setIsCreateOpen] = useState(false);
@@ -34,9 +37,6 @@ const Index = () => {
   // Initialize loading state based on whether we already have goals
   const [initialLoading, setInitialLoading] = useState(allGoals.length === 0);
   
-  const GOALS_PER_PAGE = 30;
-  const MAX_PAGES = 5;
-  
   // Memoize filtering, sorting, and pagination calculations
   const { totalPages, goals, totalGoalsCount, filteredGoalsCount } = useMemo(() => {
     const filtered = filterGoals(allGoals, filter, followingList);
@@ -53,7 +53,7 @@ const Index = () => {
       totalGoalsCount: allGoals.length,
       filteredGoalsCount: sorted.length
     };
-  }, [allGoals, currentPage, filter, sort, followingList, GOALS_PER_PAGE, MAX_PAGES]);
+  }, [allGoals, currentPage, filter, sort, followingList]);
   
   const handlePageChange = useCallback((page: number) => {
     if (page === currentPage || page < 1 || page > totalPages) return;

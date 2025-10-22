@@ -1,3 +1,4 @@
+import { memo } from 'react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
 import { Filter } from 'lucide-react';
@@ -15,7 +16,7 @@ interface GoalsFilterProps {
   isLoggedIn: boolean;
 }
 
-export const GoalsFilter = ({
+export const GoalsFilter = memo(({
   filter,
   sort,
   onFilterChange,
@@ -84,4 +85,6 @@ export const GoalsFilter = ({
       )}
     </div>
   );
-};
+});
+
+GoalsFilter.displayName = 'GoalsFilter';
