@@ -16,6 +16,12 @@ const initialState: RelaysState = {
     'wss://nostr.wine',
     'wss://relay.primal.net',
     'wss://nos.lol',
+    'wss://relay.snort.social',
+    'wss://relay.nostr.band',
+    'wss://eden.nostr.land',
+    'wss://nostr.fmt.wiz.biz',
+    'wss://relay.orangepill.dev',
+    'wss://nostr-pub.wellorder.net',
   ],
   relayStatuses: [],
 };
