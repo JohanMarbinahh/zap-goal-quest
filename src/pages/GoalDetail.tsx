@@ -1,16 +1,14 @@
 import { useParams, useNavigate } from 'react-router-dom';
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { ArrowLeft, Zap, Calendar, Target, Hash, Info, Copy, Check } from 'lucide-react';
 import { GoalComments } from '@/components/GoalComments';
 import { GoalReactions } from '@/components/GoalReactions';
 import { GoalUpdates } from '@/components/GoalUpdates';
 import { CreateUpdateDialog } from '@/components/CreateUpdateDialog';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Switch } from '@/components/ui/switch';
-import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { useAppSelector } from '@/stores/hooks';
@@ -331,76 +329,6 @@ const GoalDetail = () => {
                   {topSupporters.length === 0 && (
                     <div className="text-center py-8 text-sm text-muted-foreground">
                       No supporters yet
-                    </div>
-                  )}
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Zaps Feed */}
-            <Card>
-              <CardHeader>
-                <div className="flex items-center justify-between">
-                  <CardTitle>Recent Zaps ({zaps.length})</CardTitle>
-                  <div className="flex items-center gap-2">
-                    <Switch
-                      id="self-zaps"
-                      checked={excludeSelfZaps}
-                      onCheckedChange={setExcludeSelfZaps}
-                    />
-                    <Label htmlFor="self-zaps" className="text-sm">
-                      Hide self-zaps
-                    </Label>
-                  </div>
-                </div>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-3 max-h-[500px] overflow-y-auto">
-                  {filteredZaps
-                    .sort((a, b) => b.createdAt - a.createdAt)
-                    .map((zap) => {
-                      const zapperProfile = useAppSelector((state) => 
-                        zap.zapperPubkey ? state.profiles.profiles[zap.zapperPubkey] : null
-                      );
-                      return (
-                        <div
-                          key={zap.eventId}
-                          className="flex items-start gap-3 p-3 rounded-lg bg-secondary/50 hover:bg-secondary transition-colors"
-                        >
-                          <Avatar className="w-8 h-8">
-                            <AvatarImage src={zapperProfile?.picture} />
-                            <AvatarFallback className="bg-primary/10 text-primary text-xs">
-                              {zapperProfile?.name?.[0]?.toUpperCase() || 'Z'}
-                            </AvatarFallback>
-                          </Avatar>
-                          <div className="flex-1 min-w-0">
-                            <div className="flex items-center gap-2 mb-1">
-                              <span className="font-semibold text-sm">
-                                {zapperProfile?.displayName ||
-                                  zapperProfile?.name ||
-                                  (zap.zapperPubkey ? shortNpub(zap.zapperPubkey) : 'Anonymous')}
-                              </span>
-                              <span className="text-xs text-muted-foreground">
-                                {formatRelativeTime(zap.createdAt)}
-                              </span>
-                            </div>
-                            <div className="flex items-center gap-2">
-                              <span className="font-bold text-accent">
-                                {formatSats(zap.amountMsat / 1000)} sats
-                              </span>
-                              {zap.memo && (
-                                <span className="text-sm text-muted-foreground">
-                                  • {zap.memo}
-                                </span>
-                              )}
-                            </div>
-                          </div>
-                        </div>
-                      );
-                    })}
-                  {zaps.length === 0 && (
-                    <div className="text-center py-8 text-muted-foreground">
-                      No zaps yet. Be the first to support this goal!
                     </div>
                   )}
                 </div>
