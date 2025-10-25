@@ -9,9 +9,10 @@ import {
 
 export const RelayStatus = () => {
   const relayStatuses = useAppSelector((state) => state.relays.relayStatuses);
+  const configuredRelays = useAppSelector((state) => state.relays.relays);
 
   const connectedCount = relayStatuses.filter((r) => r.connected).length;
-  const totalCount = relayStatuses.length;
+  const totalCount = configuredRelays.length;
   const isConnected = connectedCount > 0;
 
   return (
@@ -32,15 +33,18 @@ export const RelayStatus = () => {
         <TooltipContent>
           <div className="space-y-1">
             <p className="font-semibold">Relay Connections</p>
-            {relayStatuses.map((relay) => (
-              <div key={relay.url} className="flex items-center gap-2 text-xs">
-                <div
-                  className={`w-2 h-2 rounded-full ${relay.connected ? 'bg-success' : 'bg-destructive'
-                    }`}
-                />
-                <span className="font-mono">{new URL(relay.url).hostname}</span>
-              </div>
-            ))}
+            {configuredRelays.map((relayUrl) => {
+              const status = relayStatuses.find((r) => r.url === relayUrl);
+              const isConnected = status?.connected || false;
+              return (
+                <div key={relayUrl} className="flex items-center gap-2 text-xs">
+                  <div
+                    className={`w-2 h-2 rounded-full ${isConnected ? 'bg-success' : 'bg-destructive'}`}
+                  />
+                  <span className="font-mono">{new URL(relayUrl).hostname}</span>
+                </div>
+              );
+            })}
           </div>
         </TooltipContent>
       </Tooltip>
