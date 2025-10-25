@@ -12,7 +12,7 @@ import { setGoal } from '@/stores/goalsSlice';
 import { setProfile } from '@/stores/profilesSlice';
 import { addZap } from '@/stores/zapsSlice';
 import { setFollowing } from '@/stores/contactsSlice';
-import { addReaction } from '@/stores/reactionsSlice';
+import { addReaction, addMockReactions, mockProfiles } from '@/stores/reactionsSlice';
 import { addUpdate } from '@/stores/updatesSlice';
 import { selectEnrichedGoals } from '@/stores/selectors';
 import { Goal9041 } from '@/types/nostr';
@@ -133,6 +133,11 @@ const Index = () => {
           if (goal) {
             console.log('💰 Goal loaded - Event ID:', goal.eventId, 'Title:', goal.title);
             dispatch(setGoal({ goalId: goal.goalId, goal }));
+            // Add mock reactions and profiles for demo purposes
+            dispatch(addMockReactions(goal.eventId));
+            Object.entries(mockProfiles).forEach(([pubkey, profile]) => {
+              dispatch(setProfile({ pubkey, profile }));
+            });
           }
         });
 

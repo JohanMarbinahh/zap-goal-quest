@@ -1,5 +1,5 @@
 import { useParams, useNavigate } from 'react-router-dom';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { ArrowLeft, Zap, Calendar, Target, Hash, Info, Copy, Check } from 'lucide-react';
 import { GoalReactions } from '@/components/GoalReactions';
 import { GoalUpdates } from '@/components/GoalUpdates';
@@ -12,7 +12,9 @@ import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
-import { useAppSelector } from '@/stores/hooks';
+import { useAppSelector, useAppDispatch } from '@/stores/hooks';
+import { addMockReactions, mockProfiles } from '@/stores/reactionsSlice';
+import { setProfile } from '@/stores/profilesSlice';
 import { shortNpub } from '@/lib/ndk';
 import { formatSats, formatRelativeTime } from '@/lib/nostrHelpers';
 import { toast } from '@/hooks/use-toast';
@@ -20,6 +22,7 @@ import { toast } from '@/hooks/use-toast';
 const GoalDetail = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const dispatch = useAppDispatch();
   const [excludeSelfZaps, setExcludeSelfZaps] = useState(true);
   const [copiedPubkey, setCopiedPubkey] = useState(false);
   const [isUpdateDialogOpen, setIsUpdateDialogOpen] = useState(false);
@@ -33,6 +36,16 @@ const GoalDetail = () => {
   const zaps = useAppSelector((state) => 
     goal ? (state.zaps.zapsByGoal[goal.eventId] || []) : []
   );
+  
+  // Add mock reactions on mount
+  useEffect(() => {
+    if (goal?.eventId) {
+      dispatch(addMockReactions(goal.eventId));
+      Object.entries(mockProfiles).forEach(([pubkey, profile]) => {
+        dispatch(setProfile({ pubkey, profile }));
+      });
+    }
+  }, [goal?.eventId, dispatch]);
   
   // Calculate raised amount
   const filteredZaps = excludeSelfZaps && goal
