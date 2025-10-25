@@ -56,7 +56,7 @@ export const GoalsFilter = memo(({
               <SelectItem value="recent">Recently Created</SelectItem>
               <SelectItem value="oldest">Oldest First</SelectItem>
               <SelectItem value="most-sats">Most Contributed</SelectItem>
-              <SelectItem value="least-sats">Least Sats</SelectItem>
+              <SelectItem value="least-sats">Least Contributed</SelectItem>
               <SelectItem value="best-progress">Best Progress</SelectItem>
               <SelectItem value="most-zaps">Most Zaps</SelectItem>
               <SelectItem value="highest-target">Highest Target</SelectItem>
@@ -77,7 +77,7 @@ export const GoalsFilter = memo(({
             <Badge variant="secondary" className="gap-2">
               Sort: {sort === 'oldest' ? 'Oldest First' :
                      sort === 'most-sats' ? 'Most Contributed' :
-                     sort === 'least-sats' ? 'Least Sats' :
+                     sort === 'least-sats' ? 'Least Contributed' :
                      sort === 'best-progress' ? 'Best Progress' :
                      sort === 'highest-target' ? 'Highest Target' :
                      'Most Zaps'}
