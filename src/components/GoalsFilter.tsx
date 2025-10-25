@@ -2,7 +2,7 @@ import { memo } from 'react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Filter } from 'lucide-react';
+import { Filter, ArrowUpDown, ArrowUp, ArrowDown } from 'lucide-react';
 
 export type FilterType = 'all' | 'completed' | 'active' | 'following';
 export type SortType = 'date' | 'contributed' | 'progress' | 'zaps' | 'target';
@@ -70,11 +70,20 @@ export const GoalsFilter = memo(({
 
             <Button
               variant="outline"
-              size="icon"
+              className="gap-2 min-w-[140px]"
               onClick={() => onSortDirectionChange(sortDirection === 'asc' ? 'desc' : 'asc')}
-              title={sortDirection === 'asc' ? 'Ascending' : 'Descending'}
             >
-              {sortDirection === 'asc' ? '↑' : '↓'}
+              {sortDirection === 'asc' ? (
+                <>
+                  <ArrowUp className="w-4 h-4" />
+                  Ascending
+                </>
+              ) : (
+                <>
+                  <ArrowDown className="w-4 h-4" />
+                  Descending
+                </>
+              )}
             </Button>
           </div>
         </div>
