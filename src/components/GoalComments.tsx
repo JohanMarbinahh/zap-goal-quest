@@ -1,15 +1,9 @@
-import { useState } from 'react';
 import { MessageSquare } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Textarea } from '@/components/ui/textarea';
-import { Button } from '@/components/ui/button';
 import { useAppSelector } from '@/stores/hooks';
 import { shortNpub } from '@/lib/ndk';
 import { formatRelativeTime } from '@/lib/nostrHelpers';
-import { getNDK } from '@/lib/ndk';
-import { NDKEvent } from '@nostr-dev-kit/ndk';
-import { toast } from '@/hooks/use-toast';
 
 interface GoalCommentsProps {
   goalEventId: string;
@@ -17,47 +11,10 @@ interface GoalCommentsProps {
 }
 
 export function GoalComments({ goalEventId }: GoalCommentsProps) {
-  const [commentText, setCommentText] = useState('');
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  
   const comments = useAppSelector((state) => 
     state.comments.commentsByGoal[goalEventId] || []
   );
-  const userPubkey = useAppSelector((state) => state.auth.pubkey);
   const allProfiles = useAppSelector((state) => state.profiles.profiles);
-
-  const handleSubmitComment = async () => {
-    if (!commentText.trim() || !userPubkey) return;
-
-    setIsSubmitting(true);
-    try {
-      const ndk = getNDK();
-      const event = new NDKEvent(ndk);
-      event.kind = 1;
-      event.content = commentText.trim();
-      event.tags = [
-        ['e', goalEventId], // Reference the goal
-      ];
-
-      await event.publish();
-      
-      toast({
-        title: 'Comment posted!',
-        description: 'Your comment has been published.',
-      });
-      
-      setCommentText('');
-    } catch (error) {
-      console.error('Failed to post comment:', error);
-      toast({
-        title: 'Failed to post',
-        description: 'Could not publish your comment. Please try again.',
-        variant: 'destructive',
-      });
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
 
   const sortedComments = [...comments].sort((a, b) => b.createdAt - a.createdAt);
 
@@ -70,34 +27,6 @@ export function GoalComments({ goalEventId }: GoalCommentsProps) {
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
-        {/* Comment Input */}
-        {userPubkey && (
-          <div className="space-y-2">
-            <Textarea
-              placeholder="Write a comment..."
-              value={commentText}
-              onChange={(e) => setCommentText(e.target.value)}
-              className="min-h-[80px] resize-none"
-              disabled={isSubmitting}
-            />
-            <div className="flex justify-end">
-              <Button
-                onClick={handleSubmitComment}
-                disabled={!commentText.trim() || isSubmitting}
-                size="sm"
-              >
-                {isSubmitting ? 'Posting...' : 'Post Comment'}
-              </Button>
-            </div>
-          </div>
-        )}
-
-        {!userPubkey && (
-          <div className="text-center py-4 text-sm text-muted-foreground border rounded-lg bg-muted/30">
-            Login to post comments
-          </div>
-        )}
-
         {/* Comments Feed */}
         <div className="space-y-3 max-h-[600px] overflow-y-auto">
           {sortedComments.map((comment) => {
@@ -136,7 +65,7 @@ export function GoalComments({ goalEventId }: GoalCommentsProps) {
           {comments.length === 0 && (
             <div className="text-center py-12 text-muted-foreground">
               <MessageSquare className="w-12 h-12 mx-auto mb-3 opacity-50" />
-              <p>No comments yet. Be the first to comment!</p>
+              <p>No comments yet.</p>
             </div>
           )}
         </div>

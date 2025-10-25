@@ -15,7 +15,7 @@ import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { useAppSelector, useAppDispatch } from '@/stores/hooks';
 import { setProfile } from '@/stores/profilesSlice';
-import { addComment, addMockComment, mockCommentProfile } from '@/stores/commentsSlice';
+import { addComment, addMockComments, mockCommentProfiles } from '@/stores/commentsSlice';
 import { addMockReactions, mockProfiles } from '@/stores/reactionsSlice';
 import { shortNpub, getNDK } from '@/lib/ndk';
 import { formatSats, formatRelativeTime, parseComment } from '@/lib/nostrHelpers';
@@ -49,9 +49,11 @@ const GoalDetail = () => {
         dispatch(setProfile({ pubkey, profile }));
       });
       
-      // Add mock comment
-      dispatch(addMockComment(goal.eventId));
-      dispatch(setProfile({ pubkey: mockCommentProfile.pubkey, profile: mockCommentProfile }));
+      // Add mock comments
+      dispatch(addMockComments(goal.eventId));
+      mockCommentProfiles.forEach(profile => {
+        dispatch(setProfile({ pubkey: profile.pubkey, profile }));
+      });
     }
   }, [goal?.eventId, dispatch]);
   
