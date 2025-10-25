@@ -1,36 +1,30 @@
 import NDK, { NDKEvent, NDKPrivateKeySigner } from '@nostr-dev-kit/ndk';
 import { store } from '@/stores/store';
-import { updateRelayStatus } from '@/stores/relaysSlice';
+import { updateRelayStatus, mergeDefaultRelays } from '@/stores/relaysSlice';
 import { setPubkey } from '@/stores/authSlice';
 import { nip19 } from 'nostr-tools';
 
 let ndkInstance: NDK | null = null;
 
 export async function initNDK() {
+  // Ensure default relays are merged with persisted ones
+  store.dispatch(mergeDefaultRelays());
   const relays = store.getState().relays.relays;
-  
-  console.log('🚀 Initializing NDK with relays:', relays);
 
   ndkInstance = new NDK({
     explicitRelayUrls: relays,
   });
 
-  // Track relay connections - normalize URLs by removing trailing slashes
+  // Set up relay status tracking
   ndkInstance.pool.on('relay:connect', (relay) => {
-    const normalizedUrl = relay.url.replace(/\/$/, '');
-    console.log('🟢 Connected:', normalizedUrl);
-    store.dispatch(updateRelayStatus({ url: normalizedUrl, connected: true }));
+    store.dispatch(updateRelayStatus({ url: relay.url, connected: true }));
   });
 
   ndkInstance.pool.on('relay:disconnect', (relay) => {
-    const normalizedUrl = relay.url.replace(/\/$/, '');
-    console.log('🔴 Disconnected:', normalizedUrl);
-    store.dispatch(updateRelayStatus({ url: normalizedUrl, connected: false }));
+    store.dispatch(updateRelayStatus({ url: relay.url, connected: false }));
   });
 
   await ndkInstance.connect();
-  
-  console.log('✅ NDK connected');
   return ndkInstance;
 }
 

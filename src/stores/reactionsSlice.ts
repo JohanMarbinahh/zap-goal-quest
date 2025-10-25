@@ -47,22 +47,7 @@ export const mockProfiles: Record<string, Profile> = {
 
 // Mock reaction data generator
 const generateMockReactions = (goalId: string): Reaction7[] => {
-  // Mix of votes (+, -, empty string) and emojis
-  const reactionTypes = [
-    { content: '+', weight: 15 },      // Upvotes (most common)
-    { content: '', weight: 8 },        // Empty string upvotes
-    { content: '-', weight: 5 },       // Downvotes
-    { content: '❤️', weight: 12 },     // Emojis
-    { content: '🔥', weight: 10 },
-    { content: '👍', weight: 8 },
-    { content: '🎉', weight: 6 },
-    { content: '🚀', weight: 7 },
-    { content: '💯', weight: 4 },
-    { content: '⚡', weight: 5 },
-    { content: '🌟', weight: 4 },
-    { content: '💪', weight: 3 },
-  ];
-  
+  const emojis = ['❤️', '🔥', '+', '👍', '🎉', '🚀', '💯', '⚡', '🌟', '💪'];
   const mockPubkeys = [
     'npub1mock1user1111111111111111111111111111111111111111111111',
     'npub1mock2user2222222222222222222222222222222222222222222222',
@@ -74,13 +59,14 @@ const generateMockReactions = (goalId: string): Reaction7[] => {
   const reactions: Reaction7[] = [];
   const now = Math.floor(Date.now() / 1000);
   
-  // Generate reactions based on weights
-  reactionTypes.forEach((type, index) => {
-    for (let i = 0; i < type.weight; i++) {
+  // Generate reactions
+  emojis.forEach((emoji, index) => {
+    const count = emoji === '❤️' ? 10 : emoji === '🔥' ? 8 : emoji === '+' ? 7 : Math.floor(Math.random() * 5) + 1;
+    for (let i = 0; i < count; i++) {
       reactions.push({
-        eventId: `${goalId}-reaction-${type.content || 'empty'}-${i}`,
+        eventId: `${goalId}-reaction-${emoji}-${i}`,
         authorPubkey: mockPubkeys[i % mockPubkeys.length],
-        content: type.content,
+        content: emoji,
         createdAt: now - (index * 3600) - (i * 300), // Stagger times
         targetEventId: goalId,
       });

@@ -120,7 +120,6 @@ export const useGoalsSubscription = (
       sub.on('event', (event: NDKEvent) => {
         const goal = parseGoal9041(event);
         if (goal) {
-          // Redux reducer will handle keeping only the latest version
           dispatch(setGoal({ goalId: goal.goalId, goal }));
 
           const currentCount = Object.keys(store.getState().goals.goals).length;

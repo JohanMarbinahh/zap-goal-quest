@@ -1,23 +1,12 @@
 import { useState } from 'react';
-import { Plus, Trash2, Copy, Check, RotateCcw } from 'lucide-react';
+import { Plus, Trash2, Copy, Check } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogTrigger,
-} from '@/components/ui/alert-dialog';
 import { useAppSelector, useAppDispatch } from '@/stores/hooks';
-import { addRelay, removeRelay, resetToDefaultRelays } from '@/stores/relaysSlice';
+import { addRelay, removeRelay } from '@/stores/relaysSlice';
 import { toast } from '@/hooks/use-toast';
 
 const Settings = () => {
@@ -73,14 +62,6 @@ const Settings = () => {
     toast({
       title: 'Copied!',
       description: 'Your npub has been copied to clipboard.',
-    });
-  };
-
-  const handleResetRelays = () => {
-    dispatch(resetToDefaultRelays());
-    toast({
-      title: 'Relays Reset',
-      description: 'Reset to top 10 default relays. Refresh the page to reconnect.',
     });
   };
 
@@ -145,28 +126,6 @@ const Settings = () => {
                 <Plus className="w-4 h-4" />
                 Add
               </Button>
-              <AlertDialog>
-                <AlertDialogTrigger asChild>
-                  <Button variant="outline" className="gap-2 shrink-0">
-                    <RotateCcw className="w-4 h-4" />
-                    Reset
-                  </Button>
-                </AlertDialogTrigger>
-                <AlertDialogContent>
-                  <AlertDialogHeader>
-                    <AlertDialogTitle>Reset to Default Relays?</AlertDialogTitle>
-                    <AlertDialogDescription>
-                      This will remove all custom relays and reset to the top 10 default relays. You'll need to refresh the page after resetting.
-                    </AlertDialogDescription>
-                  </AlertDialogHeader>
-                  <AlertDialogFooter>
-                    <AlertDialogCancel>Cancel</AlertDialogCancel>
-                    <AlertDialogAction onClick={handleResetRelays}>
-                      Reset Relays
-                    </AlertDialogAction>
-                  </AlertDialogFooter>
-                </AlertDialogContent>
-              </AlertDialog>
             </div>
 
             <div className="space-y-2">

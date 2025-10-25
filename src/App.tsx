@@ -3,6 +3,8 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { useEffect } from "react";
+import { initNDK, setupAuth } from "@/lib/ndk";
 import { useAppSelector } from "@/stores/hooks";
 import Index from "./pages/Index";
 import GoalDetail from "./pages/GoalDetail";
@@ -16,6 +18,18 @@ const queryClient = new QueryClient();
 
 const App = () => {
   const isAuthenticated = useAppSelector((state) => !!state.auth.pubkey);
+
+  useEffect(() => {
+    const init = async () => {
+      try {
+        await initNDK();
+        await setupAuth();
+      } catch (error) {
+        console.error('Failed to initialize NDK:', error);
+      }
+    };
+    init();
+  }, []);
 
   return (
     <QueryClientProvider client={queryClient}>
