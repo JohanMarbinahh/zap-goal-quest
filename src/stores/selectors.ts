@@ -6,7 +6,7 @@ import { Goal9041, Profile, Zap9735 } from '@/types/nostr';
 const selectGoals = (state: RootState) => state.goals.goals;
 const selectProfiles = (state: RootState) => state.profiles.profiles;
 const selectZapsByGoal = (state: RootState) => state.zaps.zapsByGoal;
-const selectReactionsByGoal = (state: RootState) => state.reactions.reactionsByGoal;
+const selectReactionsByGoal = (state: RootState) => state.reactions?.reactionsByGoal || {};
 
 // Enriched goal type with pre-calculated data
 export interface EnrichedGoal extends Goal9041 {
