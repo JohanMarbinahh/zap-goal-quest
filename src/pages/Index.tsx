@@ -33,6 +33,8 @@ const Index = () => {
   const [filter, setFilter] = useState<FilterType>('all');
   const [sort, setSort] = useState<SortType>('date');
   const [sortDirection, setSortDirection] = useState<SortDirection>('desc');
+  const [backgroundLoading, setBackgroundLoading] = useState(false);
+  const [displayedTotalCount, setDisplayedTotalCount] = useState(0);
   
   const dispatch = useAppDispatch();
   const allGoals = useAppSelector(selectEnrichedGoals);
@@ -52,6 +54,19 @@ const Index = () => {
       setGoalsLoadedCount(allGoals.length);
     }
   }, [allGoals.length, initialLoading]);
+
+  // Update displayed count in batches of 100 during background loading
+  useEffect(() => {
+    if (!initialLoading && backgroundLoading) {
+      const roundedCount = Math.floor(allGoals.length / 100) * 100;
+      if (roundedCount > displayedTotalCount) {
+        setDisplayedTotalCount(roundedCount);
+      }
+    } else if (!backgroundLoading) {
+      // Final update when loading completes
+      setDisplayedTotalCount(allGoals.length);
+    }
+  }, [allGoals.length, initialLoading, backgroundLoading, displayedTotalCount]);
   
   // Memoize filtering, sorting, and pagination calculations
   const { totalPages, goals, totalGoalsCount, filteredGoalsCount } = useMemo(() => {
@@ -171,6 +186,8 @@ const Index = () => {
               });
               
               setInitialLoading(false);
+              setBackgroundLoading(true);
+              setDisplayedTotalCount(Math.floor(currentCount / 100) * 100);
               // Don't stop the subscription - let it continue in background
             }
           }
@@ -181,6 +198,10 @@ const Index = () => {
           const elapsedTime = Date.now() - loadStartTime;
           
           console.log(`📋 Goal subscription complete - ${finalCount} total goals loaded in ${elapsedTime}ms`);
+          
+          // Stop background loading
+          setBackgroundLoading(false);
+          setDisplayedTotalCount(finalCount);
           
           // If still loading, show the page now
           if (!loadingScreenShown) {
@@ -391,9 +412,10 @@ const Index = () => {
               onFilterChange={handleFilterChange}
               onSortChange={handleSortChange}
               onSortDirectionChange={handleSortDirectionChange}
-              totalGoals={totalGoalsCount}
+              totalGoals={displayedTotalCount}
               filteredGoals={filteredGoalsCount}
               isLoggedIn={!!userPubkey}
+              isLoading={backgroundLoading}
             />
             
             {goals.length === 0 ? (

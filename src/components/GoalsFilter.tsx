@@ -2,6 +2,7 @@ import { memo } from 'react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { Spinner } from '@/components/ui/spinner';
 import { Filter, ArrowUpDown, ArrowUp, ArrowDown } from 'lucide-react';
 
 export type FilterType = 'all' | 'completed' | 'active' | 'following';
@@ -18,6 +19,7 @@ interface GoalsFilterProps {
   totalGoals: number;
   filteredGoals: number;
   isLoggedIn: boolean;
+  isLoading?: boolean;
 }
 
 export const GoalsFilter = memo(({
@@ -30,6 +32,7 @@ export const GoalsFilter = memo(({
   totalGoals,
   filteredGoals,
   isLoggedIn,
+  isLoading = false,
 }: GoalsFilterProps) => {
   return (
     <div className="flex flex-col gap-4 mb-6">
@@ -37,8 +40,12 @@ export const GoalsFilter = memo(({
         <div className="flex items-center gap-2">
           <Filter className="w-5 h-5 text-muted-foreground" />
           <span className="text-sm font-medium text-muted-foreground">
-            {totalGoals} {totalGoals === 1 ? 'goal' : 'goals'}
+            {totalGoals.toLocaleString()} {totalGoals === 1 ? 'goal' : 'goals'}
+            {isLoading && totalGoals % 100 === 0 && '+'}
           </span>
+          {isLoading && (
+            <Spinner size="sm" className="text-primary" />
+          )}
         </div>
         
         <div className="flex flex-wrap gap-3">
