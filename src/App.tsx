@@ -18,6 +18,7 @@ const queryClient = new QueryClient();
 
 const App = () => {
   const isAuthenticated = useAppSelector((state) => !!state.auth.pubkey);
+  const privateKey = useAppSelector((state) => state.auth.privateKey);
 
   useEffect(() => {
     const init = async () => {
@@ -29,7 +30,7 @@ const App = () => {
       }
     };
     init();
-  }, []);
+  }, [privateKey]);
 
   return (
     <QueryClientProvider client={queryClient}>
