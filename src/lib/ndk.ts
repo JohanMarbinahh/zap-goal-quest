@@ -1,27 +1,31 @@
 import NDK, { NDKEvent, NDKPrivateKeySigner } from '@nostr-dev-kit/ndk';
 import { store } from '@/stores/store';
-import { updateRelayStatus, mergeDefaultRelays } from '@/stores/relaysSlice';
+import { updateRelayStatus } from '@/stores/relaysSlice';
 import { setPubkey } from '@/stores/authSlice';
 import { nip19 } from 'nostr-tools';
 
 let ndkInstance: NDK | null = null;
 
 export async function initNDK() {
-  // Ensure default relays are merged with persisted ones
-  store.dispatch(mergeDefaultRelays());
   const relays = store.getState().relays.relays;
 
   ndkInstance = new NDK({
     explicitRelayUrls: relays,
   });
 
-  // Set up relay status tracking
+  // Set up relay status tracking - only for configured relays
   ndkInstance.pool.on('relay:connect', (relay) => {
-    store.dispatch(updateRelayStatus({ url: relay.url, connected: true }));
+    const currentRelays = store.getState().relays.relays;
+    if (currentRelays.includes(relay.url)) {
+      store.dispatch(updateRelayStatus({ url: relay.url, connected: true }));
+    }
   });
 
   ndkInstance.pool.on('relay:disconnect', (relay) => {
-    store.dispatch(updateRelayStatus({ url: relay.url, connected: false }));
+    const currentRelays = store.getState().relays.relays;
+    if (currentRelays.includes(relay.url)) {
+      store.dispatch(updateRelayStatus({ url: relay.url, connected: false }));
+    }
   });
 
   await ndkInstance.connect();
