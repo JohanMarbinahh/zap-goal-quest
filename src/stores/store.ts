@@ -17,6 +17,30 @@ const authPersistConfig = {
 const relaysPersistConfig = {
   key: 'zapgoal-relays',
   storage,
+  version: 1,
+  migrate: (state: any) => {
+    // Force cleanup to only 10 relays
+    if (state && state.relays && state.relays.length > 10) {
+      const DEFAULT_RELAYS = [
+        'wss://relay.damus.io',
+        'wss://nostr.wine',
+        'wss://relay.primal.net',
+        'wss://nos.lol',
+        'wss://relay.snort.social',
+        'wss://relay.nostr.band',
+        'wss://eden.nostr.land',
+        'wss://nostr.fmt.wiz.biz',
+        'wss://relay.orangepill.dev',
+        'wss://nostr-pub.wellorder.net',
+      ];
+      return {
+        ...state,
+        relays: DEFAULT_RELAYS,
+        relayStatuses: [],
+      };
+    }
+    return state;
+  },
 };
 
 const persistedAuthReducer = persistReducer(authPersistConfig, authReducer);
