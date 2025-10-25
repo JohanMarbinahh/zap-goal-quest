@@ -22,7 +22,7 @@ import {
 } from '@/components/ui/select';
 import { toast } from '@/hooks/use-toast';
 import { getNDK, publishEvent } from '@/lib/ndk';
-import { useAppDispatch } from '@/stores/hooks';
+import { useAppDispatch, useAppSelector } from '@/stores/hooks';
 import { setGoal } from '@/stores/goalsSlice';
 import { parseGoal9041 } from '@/lib/nostrHelpers';
 
@@ -39,13 +39,37 @@ export const CreateGoalDialog = ({ open, onOpenChange }: CreateGoalDialogProps) 
   const [status, setStatus] = useState('active');
   const [isLoading, setIsLoading] = useState(false);
   const dispatch = useAppDispatch();
+  const userPubkey = useAppSelector((state) => state.auth.pubkey);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
 
     try {
+      // Check if user is logged in
+      if (!userPubkey) {
+        toast({
+          title: 'Not Logged In',
+          description: 'Please log in to create a goal.',
+          variant: 'destructive',
+        });
+        setIsLoading(false);
+        return;
+      }
+
       const ndk = getNDK();
+      
+      // Check if NDK has a signer
+      if (!ndk.signer) {
+        toast({
+          title: 'Authentication Required',
+          description: 'Please log in with your Nostr key to create goals.',
+          variant: 'destructive',
+        });
+        setIsLoading(false);
+        return;
+      }
+
       const goalId = uuidv4();
       const target = parseInt(targetSats, 10);
 
@@ -55,6 +79,7 @@ export const CreateGoalDialog = ({ open, onOpenChange }: CreateGoalDialogProps) 
           description: 'Please provide a valid title and target amount.',
           variant: 'destructive',
         });
+        setIsLoading(false);
         return;
       }
 
