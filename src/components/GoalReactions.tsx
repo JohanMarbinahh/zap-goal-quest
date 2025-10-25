@@ -1,15 +1,13 @@
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
+import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { ThumbsUp, ThumbsDown, Heart, Flame } from 'lucide-react';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Smile } from 'lucide-react';
 import { useAppSelector } from '@/stores/hooks';
 import { Reaction7 } from '@/types/nostr';
-import { shortNpub } from '@/lib/ndk';
-import { formatRelativeTime } from '@/lib/nostrHelpers';
 import { getNDK } from '@/lib/ndk';
 import { toast } from '@/hooks/use-toast';
 import { NDKEvent } from '@nostr-dev-kit/ndk';
+import EmojiPicker, { EmojiClickData } from 'emoji-picker-react';
 
 interface GoalReactionsProps {
   goalEventId: string;
@@ -32,7 +30,7 @@ export const GoalReactions = ({ goalEventId, goalAuthorPubkey }: GoalReactionsPr
     return acc;
   }, {} as Record<string, number>);
 
-  const handleReact = async (emoji: string) => {
+  const handleReact = async (emojiData: EmojiClickData | string) => {
     if (!userPubkey) {
       toast({
         title: 'Login required',
@@ -41,6 +39,8 @@ export const GoalReactions = ({ goalEventId, goalAuthorPubkey }: GoalReactionsPr
       });
       return;
     }
+
+    const emoji = typeof emojiData === 'string' ? emojiData : emojiData.emoji;
 
     try {
       const ndk = getNDK();
@@ -74,49 +74,21 @@ export const GoalReactions = ({ goalEventId, goalAuthorPubkey }: GoalReactionsPr
 
   return (
     <Card>
-      <CardHeader className="space-y-3">
-        {/* Quick action buttons */}
-        <div className="flex flex-wrap gap-2">
-          <Button
-            variant="secondary"
-            size="sm"
-            onClick={() => handleReact('❤️')}
-            className="gap-1.5 rounded-full"
-          >
-            <Heart className="w-4 h-4" />
-            {reactionCounts['❤️'] || 0}
-          </Button>
-          <Button
-            variant="secondary"
-            size="sm"
-            onClick={() => handleReact('🔥')}
-            className="gap-1.5 rounded-full"
-          >
-            <Flame className="w-4 h-4" />
-            {reactionCounts['🔥'] || 0}
-          </Button>
-          <Button
-            variant="secondary"
-            size="sm"
-            onClick={() => handleReact('+')}
-            className="gap-1.5 rounded-full"
-          >
-            <ThumbsUp className="w-4 h-4" />
-            {reactionCounts['+'] || 0}
-          </Button>
-          <Button
-            variant="secondary"
-            size="sm"
-            onClick={() => handleReact('-')}
-            className="gap-1.5 rounded-full"
-          >
-            <ThumbsDown className="w-4 h-4" />
-            {reactionCounts['-'] || 0}
-          </Button>
+      <CardContent className="pt-6 space-y-4">
+        {/* Emoji picker trigger */}
+        <div className="flex gap-2">
+          <Popover>
+            <PopoverTrigger asChild>
+              <Button variant="outline" className="gap-2">
+                <Smile className="w-4 h-4" />
+                Add Reaction
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-full p-0 border-0" align="start">
+              <EmojiPicker onEmojiClick={handleReact} />
+            </PopoverContent>
+          </Popover>
         </div>
-      </CardHeader>
-      
-      <CardContent className="space-y-4">
         {/* All unique emojis section */}
         {allEmojis.length > 0 ? (
           <div className="flex flex-wrap gap-2">
