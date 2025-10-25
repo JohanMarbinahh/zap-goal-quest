@@ -1,8 +1,9 @@
 import { memo } from 'react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Filter, ArrowUp, ArrowDown } from 'lucide-react';
+import { Filter, ArrowUp, ArrowDown, Search } from 'lucide-react';
 
 export type FilterType = 'all' | 'completed' | 'active' | 'following';
 export type SortType = 'date' | 'contributed' | 'progress' | 'zaps' | 'target';
@@ -12,9 +13,11 @@ interface GoalsFilterProps {
   filter: FilterType;
   sort: SortType;
   sortDirection: SortDirection;
+  searchQuery: string;
   onFilterChange: (filter: FilterType) => void;
   onSortChange: (sort: SortType) => void;
   onSortDirectionChange: (direction: SortDirection) => void;
+  onSearchChange: (query: string) => void;
   totalGoals: number;
   filteredGoals: number;
   isLoggedIn: boolean;
@@ -25,9 +28,11 @@ export const GoalsFilter = memo(({
   filter,
   sort,
   sortDirection,
+  searchQuery,
   onFilterChange,
   onSortChange,
   onSortDirectionChange,
+  onSearchChange,
   totalGoals,
   filteredGoals,
   isLoggedIn,
@@ -35,6 +40,18 @@ export const GoalsFilter = memo(({
 }: GoalsFilterProps) => {
   return (
     <div className="flex flex-col gap-4 mb-6">
+      {/* Search bar */}
+      <div className="relative">
+        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+        <Input
+          type="text"
+          placeholder="Search goals by title or description..."
+          value={searchQuery}
+          onChange={(e) => onSearchChange(e.target.value)}
+          className="pl-9"
+        />
+      </div>
+
       <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between">
         <div className="flex items-center gap-2">
           <Filter className="w-5 h-5 text-muted-foreground" />
@@ -93,8 +110,13 @@ export const GoalsFilter = memo(({
       </div>
 
       {/* Active filter badges */}
-      {(filter !== 'all' || sort !== 'date' || sortDirection !== 'desc') && (
+      {(filter !== 'all' || sort !== 'date' || sortDirection !== 'desc' || searchQuery) && (
         <div className="flex flex-wrap gap-2">
+          {searchQuery && (
+            <Badge variant="secondary" className="gap-2">
+              Search: "{searchQuery}"
+            </Badge>
+          )}
           {filter !== 'all' && (
             <Badge variant="secondary" className="gap-2">
               Filter: {filter.charAt(0).toUpperCase() + filter.slice(1)}

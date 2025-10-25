@@ -19,6 +19,7 @@ const Index = () => {
   const [filter, setFilter] = useState<FilterType>('all');
   const [sort, setSort] = useState<SortType>('date');
   const [sortDirection, setSortDirection] = useState<SortDirection>('desc');
+  const [searchQuery, setSearchQuery] = useState('');
 
   const allGoals = useAppSelector(selectEnrichedGoals);
   const userPubkey = useAppSelector((state) => state.auth.pubkey);
@@ -41,7 +42,8 @@ const Index = () => {
     filter,
     sort,
     sortDirection,
-    followingList
+    followingList,
+    searchQuery
   );
 
   const handlePageChange = useCallback((page: number) => {
@@ -64,10 +66,16 @@ const Index = () => {
     setSortDirection(newDirection);
   }, []);
 
+  const handleSearchChange = useCallback((query: string) => {
+    setSearchQuery(query);
+    setSearchParams({ page: '1' });
+  }, [setSearchParams]);
+
   const handleClearFilters = useCallback(() => {
     setFilter('all');
     setSort('date');
     setSortDirection('desc');
+    setSearchQuery('');
     setSearchParams({ page: '1' });
   }, [setSearchParams]);
 
@@ -112,9 +120,11 @@ const Index = () => {
               filter={filter}
               sort={sort}
               sortDirection={sortDirection}
+              searchQuery={searchQuery}
               onFilterChange={handleFilterChange}
               onSortChange={handleSortChange}
               onSortDirectionChange={handleSortDirectionChange}
+              onSearchChange={handleSearchChange}
               totalGoals={displayedTotalCount}
               filteredGoals={filteredGoalsCount}
               isLoggedIn={!!userPubkey}

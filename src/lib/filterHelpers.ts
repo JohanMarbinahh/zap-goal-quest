@@ -4,19 +4,42 @@ import { FilterType, SortType, SortDirection } from '@/components/GoalsFilter';
 export const filterGoals = (
   goals: EnrichedGoal[],
   filterType: FilterType,
-  followingList: string[] = []
+  followingList: string[] = [],
+  searchQuery: string = ''
 ): EnrichedGoal[] => {
+  let filtered = goals;
+
+  // Apply type filter
   switch (filterType) {
     case 'completed':
-      return goals.filter(goal => goal.progress >= 100);
+      filtered = filtered.filter(goal => goal.progress >= 100);
+      break;
     case 'active':
-      return goals.filter(goal => goal.progress < 100);
+      filtered = filtered.filter(goal => goal.progress < 100);
+      break;
     case 'following':
-      return goals.filter(goal => followingList.includes(goal.authorPubkey));
+      filtered = filtered.filter(goal => followingList.includes(goal.authorPubkey));
+      break;
     case 'all':
     default:
-      return goals;
+      break;
   }
+
+  // Apply search filter
+  if (searchQuery.trim()) {
+    const query = searchQuery.toLowerCase().trim();
+    filtered = filtered.filter(goal => {
+      const title = (goal.title || goal.name || '').toLowerCase();
+      const summary = (goal.summary || '').toLowerCase();
+      const description = (goal.description || '').toLowerCase();
+      
+      return title.includes(query) || 
+             summary.includes(query) || 
+             description.includes(query);
+    });
+  }
+
+  return filtered;
 };
 
 export const sortGoals = (
