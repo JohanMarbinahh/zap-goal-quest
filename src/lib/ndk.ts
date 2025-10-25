@@ -40,8 +40,17 @@ export async function setupAuth() {
   const authState = store.getState().auth;
 
   // If already authenticated with private key, restore signer
-  if (authState.pubkey) {
-    return { pubkey: authState.pubkey, npub: authState.npub };
+  if (authState.pubkey && authState.privateKey) {
+    try {
+      const signer = new NDKPrivateKeySigner(authState.privateKey);
+      ndk.signer = signer;
+      console.log('✅ Restored signer for pubkey:', authState.pubkey.slice(0, 8));
+      return { pubkey: authState.pubkey, npub: authState.npub };
+    } catch (error) {
+      console.error('Failed to restore signer:', error);
+      // Clear invalid auth state
+      store.dispatch(setPubkey({ pubkey: '', npub: '', privateKey: '' }));
+    }
   }
 
   return null;
@@ -69,7 +78,7 @@ export async function loginWithPrivateKey(privateKey: string) {
     const user = await signer.user();
     const npub = nip19.npubEncode(user.pubkey);
 
-    store.dispatch(setPubkey({ pubkey: user.pubkey, npub }));
+    store.dispatch(setPubkey({ pubkey: user.pubkey, npub, privateKey: hexKey }));
     return { pubkey: user.pubkey, npub };
   } catch (error) {
     console.error('Private key login failed:', error);
