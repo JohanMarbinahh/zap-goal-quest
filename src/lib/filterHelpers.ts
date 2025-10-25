@@ -31,6 +31,8 @@ export const sortGoals = (goals: EnrichedGoal[], sortType: SortType): EnrichedGo
       return sorted.sort((a, b) => b.raised - a.raised);
     case 'lowest':
       return sorted.sort((a, b) => a.raised - b.raised);
+    case 'most-zaps':
+      return sorted.sort((a, b) => b.zaps.length - a.zaps.length);
     default:
       return sorted;
   }
