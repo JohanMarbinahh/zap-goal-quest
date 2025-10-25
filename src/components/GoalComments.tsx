@@ -24,6 +24,7 @@ export function GoalComments({ goalEventId }: GoalCommentsProps) {
     state.comments.commentsByGoal[goalEventId] || []
   );
   const userPubkey = useAppSelector((state) => state.auth.pubkey);
+  const allProfiles = useAppSelector((state) => state.profiles.profiles);
 
   const handleSubmitComment = async () => {
     if (!commentText.trim() || !userPubkey) return;
@@ -100,9 +101,7 @@ export function GoalComments({ goalEventId }: GoalCommentsProps) {
         {/* Comments Feed */}
         <div className="space-y-3 max-h-[600px] overflow-y-auto">
           {sortedComments.map((comment) => {
-            const authorProfile = useAppSelector((state) => 
-              state.profiles.profiles[comment.authorPubkey]
-            );
+            const authorProfile = allProfiles[comment.authorPubkey];
             
             return (
               <div
