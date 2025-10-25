@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Filter, ArrowUp, ArrowDown, Search } from 'lucide-react';
 
 export type FilterType = 'all' | 'completed' | 'active' | 'following';
-export type SortType = 'date' | 'contributed' | 'progress' | 'zaps' | 'target';
+export type SortType = 'date' | 'contributed' | 'progress' | 'zaps' | 'target' | 'upvotes';
 export type SortDirection = 'asc' | 'desc';
 
 interface GoalsFilterProps {
@@ -85,6 +85,7 @@ export const GoalsFilter = memo(({
                 <SelectItem value="progress">% Completion</SelectItem>
                 <SelectItem value="zaps">Zaps Count</SelectItem>
                 <SelectItem value="target">Target Amount</SelectItem>
+                <SelectItem value="upvotes">Most Upvoted</SelectItem>
               </SelectContent>
             </Select>
 
@@ -128,6 +129,7 @@ export const GoalsFilter = memo(({
                      sort === 'contributed' ? 'Amount Contributed' :
                      sort === 'progress' ? '% Completion' :
                      sort === 'zaps' ? 'Zaps Count' :
+                     sort === 'upvotes' ? 'Most Upvoted' :
                      'Target Amount'} ({sortDirection === 'asc' ? 'Ascending' : 'Descending'})
             </Badge>
           )}

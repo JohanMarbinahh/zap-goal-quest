@@ -7,6 +7,7 @@ import profilesReducer from './profilesSlice';
 import goalsReducer from './goalsSlice';
 import zapsReducer from './zapsSlice';
 import contactsReducer from './contactsSlice';
+import reactionsReducer from './reactionsSlice';
 
 const authPersistConfig = {
   key: 'zapgoal-auth',
@@ -29,6 +30,7 @@ export const store = configureStore({
     goals: goalsReducer,
     zaps: zapsReducer,
     contacts: contactsReducer,
+    reactions: reactionsReducer,
   },
   middleware: (getDefaultMiddleware) =>
     getDefaultMiddleware({

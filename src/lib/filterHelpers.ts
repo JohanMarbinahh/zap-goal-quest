@@ -61,6 +61,8 @@ export const sortGoals = (
       return sorted.sort((a, b) => multiplier * (b.zaps.length - a.zaps.length));
     case 'target':
       return sorted.sort((a, b) => multiplier * (b.targetSats - a.targetSats));
+    case 'upvotes':
+      return sorted.sort((a, b) => multiplier * (b.upvotes - a.upvotes));
     default:
       return sorted;
   }
