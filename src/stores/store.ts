@@ -19,7 +19,7 @@ const relaysPersistConfig = {
   storage,
   version: 1,
   migrate: (state: any) => {
-    // Force cleanup to only 10 relays
+    // Force cleanup to only 10 relays on migration
     if (state && state.relays && state.relays.length > 10) {
       const DEFAULT_RELAYS = [
         'wss://relay.damus.io',
@@ -33,13 +33,13 @@ const relaysPersistConfig = {
         'wss://relay.orangepill.dev',
         'wss://nostr-pub.wellorder.net',
       ];
-      return {
+      return Promise.resolve({
         ...state,
         relays: DEFAULT_RELAYS,
         relayStatuses: [],
-      };
+      });
     }
-    return state;
+    return Promise.resolve(state);
   },
 };
 
