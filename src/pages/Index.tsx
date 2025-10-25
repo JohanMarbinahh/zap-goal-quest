@@ -57,9 +57,11 @@ const Index = () => {
     }
   }, [allGoals.length, initialLoading]);
   
-  // Memoize filtering, sorting, and pagination calculations - use displayGoals to freeze UI
+  // Memoize filtering, sorting, and pagination calculations
+  // After loading, use allGoals for pagination but displayGoals for the count (to keep it stable)
   const { totalPages, goals, totalGoalsCount, filteredGoalsCount } = useMemo(() => {
-    const filtered = filterGoals(displayGoals, filter, followingList);
+    const goalsToUse = initialLoading ? displayGoals : allGoals;
+    const filtered = filterGoals(goalsToUse, filter, followingList);
     const sorted = sortGoals(filtered, sort, sortDirection);
     
     const pages = Math.min(Math.ceil(sorted.length / GOALS_PER_PAGE), MAX_PAGES);
@@ -70,10 +72,10 @@ const Index = () => {
     return { 
       totalPages: pages, 
       goals: pageGoals,
-      totalGoalsCount: displayGoals.length,
+      totalGoalsCount: displayGoals.length, // Keep count stable at initial load number
       filteredGoalsCount: sorted.length
     };
-  }, [displayGoals, currentPage, filter, sort, sortDirection, followingList]);
+  }, [allGoals, displayGoals, initialLoading, currentPage, filter, sort, sortDirection, followingList]);
   
   const handlePageChange = useCallback((page: number) => {
     if (page === currentPage || page < 1 || page > totalPages) return;
@@ -186,6 +188,12 @@ const Index = () => {
           
           console.log(`📋 Goal subscription complete - ${finalCount} total goals loaded in ${elapsedTime}ms`);
           
+          // Stop the goal subscription to prevent further updates
+          if (goalSub) {
+            goalSub.stop();
+            console.log('🛑 Stopped goal subscription after EOSE');
+          }
+          
           // Ensure minimum loading time has passed
           const remainingTime = Math.max(0, MIN_LOADING_TIME - elapsedTime);
           
@@ -193,13 +201,13 @@ const Index = () => {
             console.log(`⏳ Waiting ${remainingTime}ms to meet minimum loading time`);
             setTimeout(() => {
               if (loadingTimeout) clearTimeout(loadingTimeout);
-              // Snapshot current goals to freeze the UI
+              // Snapshot current goals to freeze the counter
               setDisplayGoals(selectEnrichedGoals(store.getState()));
               setInitialLoading(false);
             }, remainingTime);
           } else {
             if (loadingTimeout) clearTimeout(loadingTimeout);
-            // Snapshot current goals to freeze the UI
+            // Snapshot current goals to freeze the counter
             setDisplayGoals(selectEnrichedGoals(store.getState()));
             setInitialLoading(false);
           }
