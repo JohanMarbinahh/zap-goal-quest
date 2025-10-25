@@ -58,9 +58,9 @@ const Index = () => {
   }, [allGoals.length, initialLoading]);
   
   // Memoize filtering, sorting, and pagination calculations
-  // After loading, use allGoals for pagination but displayGoals for the count (to keep it stable)
+  // Always use displayGoals (frozen snapshot) to prevent cards from changing
   const { totalPages, goals, totalGoalsCount, filteredGoalsCount } = useMemo(() => {
-    const goalsToUse = initialLoading ? displayGoals : allGoals;
+    const goalsToUse = displayGoals.length > 0 ? displayGoals : allGoals;
     const filtered = filterGoals(goalsToUse, filter, followingList);
     const sorted = sortGoals(filtered, sort, sortDirection);
     
@@ -72,10 +72,10 @@ const Index = () => {
     return { 
       totalPages: pages, 
       goals: pageGoals,
-      totalGoalsCount: displayGoals.length, // Keep count stable at initial load number
+      totalGoalsCount: goalsToUse.length,
       filteredGoalsCount: sorted.length
     };
-  }, [allGoals, displayGoals, initialLoading, currentPage, filter, sort, sortDirection, followingList]);
+  }, [displayGoals, allGoals, currentPage, filter, sort, sortDirection, followingList]);
   
   const handlePageChange = useCallback((page: number) => {
     if (page === currentPage || page < 1 || page > totalPages) return;
@@ -126,7 +126,12 @@ const Index = () => {
       try {
         // Set a timeout to stop loading after max time
         loadingTimeout = setTimeout(() => {
-          console.log('⏱️ Max loading time reached - showing content');
+          console.log('⏱️ Max loading time reached - freezing UI and stopping subscription');
+          // Stop goal subscription immediately
+          if (goalSub) {
+            goalSub.stop();
+            console.log('🛑 Stopped goal subscription at MAX_LOADING_TIME');
+          }
           // Snapshot current goals to freeze the UI
           setDisplayGoals(selectEnrichedGoals(store.getState()));
           setInitialLoading(false);
@@ -173,9 +178,14 @@ const Index = () => {
             const elapsedTime = Date.now() - loadStartTime;
             
             if (currentCount >= MIN_GOALS_TO_SHOW && elapsedTime >= MIN_LOADING_TIME) {
-              console.log(`✅ ${currentCount} goals loaded - showing page!`);
+              console.log(`✅ ${currentCount} goals loaded - freezing UI and stopping subscription`);
               if (loadingTimeout) clearTimeout(loadingTimeout);
-              // Snapshot current goals to freeze the UI
+              // Stop goal subscription immediately to prevent further updates
+              if (goalSub) {
+                goalSub.stop();
+                console.log('🛑 Stopped goal subscription at MIN_GOALS_TO_SHOW');
+              }
+              // Snapshot current goals to freeze the UI completely
               setDisplayGoals(selectEnrichedGoals(store.getState()));
               setInitialLoading(false);
             }
@@ -201,13 +211,13 @@ const Index = () => {
             console.log(`⏳ Waiting ${remainingTime}ms to meet minimum loading time`);
             setTimeout(() => {
               if (loadingTimeout) clearTimeout(loadingTimeout);
-              // Snapshot current goals to freeze the counter
+              // Snapshot current goals to freeze UI completely
               setDisplayGoals(selectEnrichedGoals(store.getState()));
               setInitialLoading(false);
             }, remainingTime);
           } else {
             if (loadingTimeout) clearTimeout(loadingTimeout);
-            // Snapshot current goals to freeze the counter
+            // Snapshot current goals to freeze UI completely
             setDisplayGoals(selectEnrichedGoals(store.getState()));
             setInitialLoading(false);
           }
