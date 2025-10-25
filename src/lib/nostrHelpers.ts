@@ -31,6 +31,7 @@ export function parseGoal9041(event: NDKEvent): Goal9041 | null {
     const closedTag = event.tags.find((t) => t[0] === 'closed_at');
     const imageTag = event.tags.find((t) => t[0] === 'image')?.[1];
     const descriptionTag = event.tags.find((t) => t[0] === 'description')?.[1];
+    const updatedFromTag = event.tags.find((t) => t[0] === 'updated_from')?.[1];
     
     let targetSats = 0;
     
@@ -98,6 +99,7 @@ export function parseGoal9041(event: NDKEvent): Goal9041 | null {
       imageUrl,
       summary: summary.substring(0, 500), // Limit summary length
       description: descriptionTag || undefined,
+      updatedFrom: updatedFromTag,
     };
   } catch (error) {
     console.error('Failed to parse goal:', error, event);

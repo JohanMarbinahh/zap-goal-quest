@@ -14,7 +14,13 @@ const goalsSlice = createSlice({
   initialState,
   reducers: {
     setGoal: (state, action: PayloadAction<{ goalId: string; goal: Goal9041 }>) => {
-      state.goals[action.payload.goalId] = action.payload.goal;
+      const { goalId, goal } = action.payload;
+      const existingGoal = state.goals[goalId];
+      
+      // If there's an existing goal with this goalId, only replace if the new one is newer
+      if (!existingGoal || goal.createdAt >= existingGoal.createdAt) {
+        state.goals[goalId] = goal;
+      }
     },
   },
 });

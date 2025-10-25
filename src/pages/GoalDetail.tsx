@@ -1,10 +1,11 @@
 import { useParams, useNavigate } from 'react-router-dom';
 import { useState, useEffect } from 'react';
-import { ArrowLeft, Zap, Calendar, Target, Hash, Info, Copy, Check } from 'lucide-react';
+import { ArrowLeft, Zap, Calendar, Target, Hash, Info, Copy, Check, Edit } from 'lucide-react';
 import { GoalComments } from '@/components/GoalComments';
 import { GoalReactions } from '@/components/GoalReactions';
 import { GoalUpdates } from '@/components/GoalUpdates';
 import { CreateUpdateDialog } from '@/components/CreateUpdateDialog';
+import { EditGoalDialog } from '@/components/EditGoalDialog';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
@@ -22,6 +23,7 @@ const GoalDetail = () => {
   const [excludeSelfZaps, setExcludeSelfZaps] = useState(true);
   const [copiedPubkey, setCopiedPubkey] = useState(false);
   const [isUpdateDialogOpen, setIsUpdateDialogOpen] = useState(false);
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   
   const userPubkey = useAppSelector((state) => state.auth.pubkey);
 
@@ -285,6 +287,26 @@ const GoalDetail = () => {
         <div className="grid md:grid-cols-3 gap-6">
           {/* Left Column: Comments, Reactions & Updates */}
           <div className="md:col-span-2 space-y-6">
+            {/* Author Controls - Only show for goal author */}
+            {userPubkey === goal.authorPubkey && (
+              <div className="flex gap-2 w-full">
+                <Button 
+                  onClick={() => setIsEditDialogOpen(true)}
+                  variant="outline"
+                  className="flex-1"
+                >
+                  <Edit className="w-4 h-4 mr-2" />
+                  Edit Goal
+                </Button>
+                <Button 
+                  onClick={() => setIsUpdateDialogOpen(true)}
+                  className="flex-1"
+                >
+                  Post Update
+                </Button>
+              </div>
+            )}
+            
             <GoalComments goalEventId={goal.eventId} goalAuthorPubkey={goal.authorPubkey} />
             <GoalReactions goalEventId={goal.eventId} goalAuthorPubkey={goal.authorPubkey} />
             <GoalUpdates 
@@ -353,6 +375,11 @@ const GoalDetail = () => {
         onOpenChange={setIsUpdateDialogOpen}
         goalEventId={goal.eventId}
         goalAuthorPubkey={goal.authorPubkey}
+      />
+      <EditGoalDialog
+        open={isEditDialogOpen}
+        onOpenChange={setIsEditDialogOpen}
+        goal={goal}
       />
     </main>
   );

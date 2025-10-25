@@ -20,6 +20,7 @@ export interface Goal9041 {
   imageUrl?: string;
   summary?: string;
   description?: string;
+  updatedFrom?: string; // Previous event ID if this is an update
 }
 
 export interface Zap9735 {
