@@ -36,7 +36,7 @@ const relaysPersistConfig = {
       return Promise.resolve({
         ...state,
         relays: DEFAULT_RELAYS,
-        relayStatuses: [],
+        // Keep relayStatuses - let NDK update them naturally
       });
     }
     return Promise.resolve(state);
