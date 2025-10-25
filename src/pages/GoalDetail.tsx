@@ -2,6 +2,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { useState, useEffect } from 'react';
 import { ArrowLeft, Zap, Calendar, Target, Hash, Info, Copy, Check } from 'lucide-react';
 import { GoalComments } from '@/components/GoalComments';
+import { GoalReactions } from '@/components/GoalReactions';
 import { GoalUpdates } from '@/components/GoalUpdates';
 import { CreateUpdateDialog } from '@/components/CreateUpdateDialog';
 import { Button } from '@/components/ui/button';
@@ -14,7 +15,8 @@ import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { useAppSelector, useAppDispatch } from '@/stores/hooks';
 import { setProfile } from '@/stores/profilesSlice';
-import { addComment } from '@/stores/commentsSlice';
+import { addComment, addMockComment, mockCommentProfile } from '@/stores/commentsSlice';
+import { addMockReactions, mockProfiles } from '@/stores/reactionsSlice';
 import { shortNpub, getNDK } from '@/lib/ndk';
 import { formatSats, formatRelativeTime, parseComment } from '@/lib/nostrHelpers';
 import { toast } from '@/hooks/use-toast';
@@ -37,6 +39,21 @@ const GoalDetail = () => {
   const zaps = useAppSelector((state) => 
     goal ? (state.zaps.zapsByGoal[goal.eventId] || []) : []
   );
+  
+  // Add mock data on mount
+  useEffect(() => {
+    if (goal?.eventId) {
+      // Add mock reactions
+      dispatch(addMockReactions(goal.eventId));
+      Object.entries(mockProfiles).forEach(([pubkey, profile]) => {
+        dispatch(setProfile({ pubkey, profile }));
+      });
+      
+      // Add mock comment
+      dispatch(addMockComment(goal.eventId));
+      dispatch(setProfile({ pubkey: mockCommentProfile.pubkey, profile: mockCommentProfile }));
+    }
+  }, [goal?.eventId, dispatch]);
   
   // Subscribe to comments for this goal
   useEffect(() => {
@@ -341,9 +358,10 @@ const GoalDetail = () => {
         </div>
 
         <div className="grid md:grid-cols-3 gap-6">
-          {/* Left Column: Comments & Updates */}
+          {/* Left Column: Comments, Reactions & Updates */}
           <div className="md:col-span-2 space-y-6">
             <GoalComments goalEventId={goal.eventId} goalAuthorPubkey={goal.authorPubkey} />
+            <GoalReactions goalEventId={goal.eventId} goalAuthorPubkey={goal.authorPubkey} />
             <GoalUpdates 
               goalEventId={goal.eventId} 
               onCreateUpdate={() => setIsUpdateDialogOpen(true)}
