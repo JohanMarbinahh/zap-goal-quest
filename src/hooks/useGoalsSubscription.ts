@@ -4,14 +4,19 @@ import { store } from '@/stores/store';
 import { setGoal } from '@/stores/goalsSlice';
 import { setProfile } from '@/stores/profilesSlice';
 import { addZap } from '@/stores/zapsSlice';
-import { addReaction, addMockReactions, mockProfiles } from '@/stores/reactionsSlice';
 import { setFollowing } from '@/stores/contactsSlice';
-import { addUpdate } from '@/stores/updatesSlice';
 import { selectEnrichedGoals, EnrichedGoal } from '@/stores/selectors';
 import { Goal9041 } from '@/types/nostr';
 import { getNDK } from '@/lib/ndk';
-import { parseGoal9041, parseProfile, parseZap9735, parseReaction7, parseGoalUpdate } from '@/lib/nostrHelpers';
+import { parseGoal9041, parseProfile, parseZap9735 } from '@/lib/nostrHelpers';
 import type { NDKFilter, NDKSubscription, NDKEvent } from '@nostr-dev-kit/ndk';
+
+// Mock profiles for demo
+const mockProfiles = {
+  mock1: { pubkey: 'mock1', name: 'Alice', picture: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Alice' },
+  mock2: { pubkey: 'mock2', name: 'Bob', picture: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Bob' },
+  mock3: { pubkey: 'mock3', name: 'Charlie', picture: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Charlie' },
+};
 
 const MIN_LOADING_TIME = 1000;
 const MAX_GOALS_TO_LOAD = 100;
@@ -59,8 +64,6 @@ export const useGoalsSubscription = (
     let goalSub: NDKSubscription | null = null;
     let profileSub: NDKSubscription | null = null;
     let contactSub: NDKSubscription | null = null;
-    let reactionSub: NDKSubscription | null = null;
-    let updateSub: NDKSubscription | null = null;
 
     const subscribeToEvents = async () => {
       if (hasSubscribed.current) {
@@ -119,10 +122,6 @@ export const useGoalsSubscription = (
         if (goal) {
           dispatch(setGoal({ goalId: goal.goalId, goal }));
 
-          if (!loadingScreenShown && Object.keys(store.getState().goals.goals).length <= 10) {
-            dispatch(addMockReactions(goal.eventId));
-          }
-
           const currentCount = Object.keys(store.getState().goals.goals).length;
           const elapsedTime = Date.now() - loadStartTime.current;
 
@@ -152,10 +151,6 @@ export const useGoalsSubscription = (
         setDisplayedTotalCount(finalCount);
 
         if (!loadingScreenShown) {
-          const currentGoals = Object.values(store.getState().goals.goals);
-          currentGoals.slice(0, 10).forEach((goal: Goal9041) => {
-            dispatch(addMockReactions(goal.eventId));
-          });
           Object.entries(mockProfiles).forEach(([pubkey, profile]) => {
             dispatch(setProfile({ pubkey, profile }));
           });
@@ -205,41 +200,6 @@ export const useGoalsSubscription = (
       testZapSub.on('eose', () => {
         if (IS_DEV) console.log(`📊 ${zapCount} zaps found, ${matchingZapCount} matched`);
       });
-
-      if (goalEventIds.length > 0) {
-        const reactionFilter: NDKFilter = {
-          kinds: [7 as any],
-          '#e': goalEventIds,
-          limit: 1000
-        };
-        reactionSub = ndk.subscribe(reactionFilter, { closeOnEose: false });
-
-        reactionSub.on('event', (event: NDKEvent) => {
-          const reaction = parseReaction7(event);
-          if (reaction) {
-            dispatch(addReaction(reaction));
-          }
-        });
-      }
-
-      const goalAuthors = [...new Set(Object.values(currentGoals).map((g: Goal9041) => g.authorPubkey))];
-
-      if (goalAuthors.length > 0 && goalEventIds.length > 0) {
-        const updateFilter: NDKFilter = {
-          kinds: [1],
-          authors: goalAuthors,
-          '#e': goalEventIds,
-          limit: 500
-        };
-        updateSub = ndk.subscribe(updateFilter, { closeOnEose: false });
-
-        updateSub.on('event', (event: NDKEvent) => {
-          const update = parseGoalUpdate(event);
-          if (update) {
-            dispatch(addUpdate(update));
-          }
-        });
-      }
     };
 
     const subscribeToProfiles = async (ndk: any): Promise<NDKSubscription> => {
@@ -280,8 +240,6 @@ export const useGoalsSubscription = (
       goalSub?.stop();
       profileSub?.stop();
       contactSub?.stop();
-      reactionSub?.stop();
-      updateSub?.stop();
     };
   }, []);
 

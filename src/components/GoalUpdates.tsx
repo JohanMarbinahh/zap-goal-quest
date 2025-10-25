@@ -3,6 +3,7 @@ import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { MessageSquare } from 'lucide-react';
 import { useAppSelector } from '@/stores/hooks';
+import { useGoalUpdates } from '@/hooks/useGoalUpdates';
 import { shortNpub } from '@/lib/ndk';
 import { formatRelativeTime } from '@/lib/nostrHelpers';
 
@@ -13,9 +14,11 @@ interface GoalUpdatesProps {
 }
 
 export const GoalUpdates = ({ goalEventId, onCreateUpdate, isGoalAuthor }: GoalUpdatesProps) => {
-  const updates = useAppSelector((state) => 
-    state.updates.updatesByGoal[goalEventId] || []
-  );
+  const authorPubkey = useAppSelector((state) => {
+    const goal = Object.values(state.goals.goals).find(g => g.eventId === goalEventId);
+    return goal?.authorPubkey || '';
+  });
+  const updates = useGoalUpdates(goalEventId, authorPubkey);
 
   return (
     <Card>

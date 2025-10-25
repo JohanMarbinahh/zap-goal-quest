@@ -35,7 +35,7 @@ export interface Reaction7 {
   eventId: string;
   createdAt: number;
   targetEventId: string;
-  reactorPubkey: string;
+  authorPubkey: string;
   content: string;
 }
 
@@ -45,4 +45,12 @@ export interface Comment {
   targetEventId: string;
   authorPubkey: string;
   content: string;
+}
+
+export interface GoalUpdate {
+  eventId: string;
+  goalEventId: string;
+  authorPubkey: string;
+  content: string;
+  createdAt: number;
 }

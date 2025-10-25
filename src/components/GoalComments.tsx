@@ -2,6 +2,7 @@ import { MessageSquare } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { useAppSelector } from '@/stores/hooks';
+import { useGoalComments } from '@/hooks/useGoalComments';
 import { shortNpub } from '@/lib/ndk';
 import { formatRelativeTime } from '@/lib/nostrHelpers';
 
@@ -11,9 +12,7 @@ interface GoalCommentsProps {
 }
 
 export function GoalComments({ goalEventId }: GoalCommentsProps) {
-  const comments = useAppSelector((state) => 
-    state.comments.commentsByGoal[goalEventId] || []
-  );
+  const comments = useGoalComments(goalEventId);
   const allProfiles = useAppSelector((state) => state.profiles.profiles);
 
   const sortedComments = [...comments].sort((a, b) => b.createdAt - a.createdAt);

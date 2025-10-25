@@ -169,7 +169,7 @@ export function parseReaction7(event: NDKEvent): Reaction7 | null {
       eventId: event.id,
       createdAt: event.created_at || Date.now() / 1000,
       targetEventId: eTag,
-      reactorPubkey: event.pubkey,
+      authorPubkey: event.pubkey,
       content: event.content,
     };
   } catch (error) {

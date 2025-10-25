@@ -65,7 +65,7 @@ const generateMockReactions = (goalId: string): Reaction7[] => {
     for (let i = 0; i < count; i++) {
       reactions.push({
         eventId: `${goalId}-reaction-${emoji}-${i}`,
-        reactorPubkey: mockPubkeys[i % mockPubkeys.length],
+        authorPubkey: mockPubkeys[i % mockPubkeys.length],
         content: emoji,
         createdAt: now - (index * 3600) - (i * 300), // Stagger times
         targetEventId: goalId,

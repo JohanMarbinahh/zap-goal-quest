@@ -1,5 +1,5 @@
 import { Card, CardContent } from '@/components/ui/card';
-import { useAppSelector } from '@/stores/hooks';
+import { useGoalReactions } from '@/hooks/useGoalReactions';
 import { Reaction7 } from '@/types/nostr';
 
 interface GoalReactionsProps {
@@ -8,9 +8,7 @@ interface GoalReactionsProps {
 }
 
 export const GoalReactions = ({ goalEventId, goalAuthorPubkey }: GoalReactionsProps) => {
-  const reactions = useAppSelector((state) => 
-    state.reactions.reactionsByGoal[goalEventId] || []
-  );
+  const reactions = useGoalReactions(goalEventId);
 
   // Count by type
   const reactionCounts = reactions.reduce((acc, r) => {

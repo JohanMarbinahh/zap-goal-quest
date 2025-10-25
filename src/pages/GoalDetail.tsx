@@ -13,19 +13,14 @@ import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
-import { useAppSelector, useAppDispatch } from '@/stores/hooks';
-import { setProfile } from '@/stores/profilesSlice';
-import { addComment, addMockComments, mockCommentProfiles } from '@/stores/commentsSlice';
-import { addMockReactions, mockProfiles } from '@/stores/reactionsSlice';
-import { shortNpub, getNDK } from '@/lib/ndk';
-import { formatSats, formatRelativeTime, parseComment } from '@/lib/nostrHelpers';
+import { useAppSelector } from '@/stores/hooks';
+import { shortNpub } from '@/lib/ndk';
+import { formatSats, formatRelativeTime } from '@/lib/nostrHelpers';
 import { toast } from '@/hooks/use-toast';
-import { NDKFilter, NDKSubscription } from '@nostr-dev-kit/ndk';
 
 const GoalDetail = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const dispatch = useAppDispatch();
   const [excludeSelfZaps, setExcludeSelfZaps] = useState(true);
   const [copiedPubkey, setCopiedPubkey] = useState(false);
   const [isUpdateDialogOpen, setIsUpdateDialogOpen] = useState(false);
@@ -39,76 +34,6 @@ const GoalDetail = () => {
   const zaps = useAppSelector((state) => 
     goal ? (state.zaps.zapsByGoal[goal.eventId] || []) : []
   );
-  
-  // Add mock data on mount
-  useEffect(() => {
-    if (goal?.eventId) {
-      // Add mock reactions
-      dispatch(addMockReactions(goal.eventId));
-      Object.entries(mockProfiles).forEach(([pubkey, profile]) => {
-        dispatch(setProfile({ pubkey, profile }));
-      });
-      
-      // Add mock comments
-      dispatch(addMockComments(goal.eventId));
-      mockCommentProfiles.forEach(profile => {
-        dispatch(setProfile({ pubkey: profile.pubkey, profile }));
-      });
-    }
-  }, [goal?.eventId, dispatch]);
-  
-  // Subscribe to comments for this goal
-  useEffect(() => {
-    if (!goal?.eventId) return;
-    
-    let commentSub: NDKSubscription | null = null;
-    
-    const subscribeToComments = async () => {
-      try {
-        const ndk = getNDK();
-        const commentFilter: NDKFilter = {
-          kinds: [1],
-          '#e': [goal.eventId],
-          limit: 100,
-        };
-        
-        commentSub = ndk.subscribe(commentFilter, { closeOnEose: false });
-        
-        commentSub.on('event', (event) => {
-          const comment = parseComment(event);
-          if (comment) {
-            dispatch(addComment(comment));
-            
-            // Subscribe to commenter profile
-            const profileFilter: NDKFilter = {
-              kinds: [0],
-              authors: [comment.authorPubkey],
-            };
-            const profileSub = ndk.subscribe(profileFilter, { closeOnEose: true });
-            profileSub.on('event', (profileEvent) => {
-              try {
-                const profile = JSON.parse(profileEvent.content);
-                dispatch(setProfile({ 
-                  pubkey: profileEvent.pubkey, 
-                  profile: { pubkey: profileEvent.pubkey, ...profile } 
-                }));
-              } catch (error) {
-                console.error('Failed to parse profile:', error);
-              }
-            });
-          }
-        });
-      } catch (error) {
-        console.error('Failed to subscribe to comments:', error);
-      }
-    };
-    
-    subscribeToComments();
-    
-    return () => {
-      commentSub?.stop();
-    };
-  }, [goal?.eventId, dispatch]);
   
   // Calculate raised amount
   const filteredZaps = excludeSelfZaps && goal
