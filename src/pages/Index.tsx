@@ -24,6 +24,7 @@ import { NDKFilter, NDKSubscription } from '@nostr-dev-kit/ndk';
 const GOALS_PER_PAGE = 30;
 const MAX_PAGES = 5;
 const MIN_LOADING_TIME = 1000; // Minimum 1 second loading for smooth UX
+const MAX_GOALS_TO_LOAD = 100; // Stop loading and show page after this many goals
 
 const Index = () => {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -144,7 +145,7 @@ const Index = () => {
         }
 
         // Subscribe to kind 9041 (goals)
-        const goalFilter: NDKFilter = { kinds: [9041 as any], limit: 500 };
+        const goalFilter: NDKFilter = { kinds: [9041 as any], limit: MAX_GOALS_TO_LOAD };
         goalSub = ndk.subscribe(goalFilter, { closeOnEose: false });
 
         // Batch goals to reduce Redux dispatches
@@ -160,6 +161,31 @@ const Index = () => {
           }
         };
 
+        const checkIfShouldStopLoading = () => {
+          const currentCount = Object.keys(store.getState().goals.goals).length;
+          const elapsedTime = Date.now() - loadStartTime;
+          
+          if (currentCount >= MAX_GOALS_TO_LOAD && elapsedTime >= MIN_LOADING_TIME) {
+            console.log(`✅ Reached ${currentCount} goals - stopping and showing page!`);
+            if (batchTimeout) clearTimeout(batchTimeout);
+            flushBatch();
+            if (goalSub) goalSub.stop();
+            
+            // Add mock data
+            const currentGoals = Object.values(store.getState().goals.goals);
+            currentGoals.slice(0, 10).forEach((goal: Goal9041) => {
+              dispatch(addMockReactions(goal.eventId));
+            });
+            Object.entries(mockProfiles).forEach(([pubkey, profile]) => {
+              dispatch(setProfile({ pubkey, profile }));
+            });
+            
+            setInitialLoading(false);
+            return true;
+          }
+          return false;
+        };
+
         goalSub.on('event', (event) => {
           const goal = parseGoal9041(event);
           if (goal) {
@@ -169,10 +195,12 @@ const Index = () => {
             if (goalBatch.length >= 10) {
               if (batchTimeout) clearTimeout(batchTimeout);
               flushBatch();
+              checkIfShouldStopLoading();
             } else if (!batchTimeout) {
               batchTimeout = setTimeout(() => {
                 flushBatch();
                 batchTimeout = null;
+                checkIfShouldStopLoading();
               }, 50);
             }
           }
@@ -188,25 +216,27 @@ const Index = () => {
           
           console.log(`📋 Goal subscription complete - ${finalCount} total goals loaded in ${elapsedTime}ms`);
           
-          // Add mock data only once at the end
-          const currentGoals = Object.values(store.getState().goals.goals);
-          currentGoals.slice(0, 10).forEach((goal: Goal9041) => {
-            dispatch(addMockReactions(goal.eventId));
-          });
-          Object.entries(mockProfiles).forEach(([pubkey, profile]) => {
-            dispatch(setProfile({ pubkey, profile }));
-          });
-          
-          // Ensure minimum loading time has passed
-          const remainingTime = Math.max(0, MIN_LOADING_TIME - elapsedTime);
-          
-          if (remainingTime > 0) {
-            console.log(`⏳ Waiting ${remainingTime}ms to meet minimum loading time`);
-            setTimeout(() => {
+          // Add mock data only once at the end if not already done
+          if (initialLoading) {
+            const currentGoals = Object.values(store.getState().goals.goals);
+            currentGoals.slice(0, 10).forEach((goal: Goal9041) => {
+              dispatch(addMockReactions(goal.eventId));
+            });
+            Object.entries(mockProfiles).forEach(([pubkey, profile]) => {
+              dispatch(setProfile({ pubkey, profile }));
+            });
+            
+            // Ensure minimum loading time has passed
+            const remainingTime = Math.max(0, MIN_LOADING_TIME - elapsedTime);
+            
+            if (remainingTime > 0) {
+              console.log(`⏳ Waiting ${remainingTime}ms to meet minimum loading time`);
+              setTimeout(() => {
+                setInitialLoading(false);
+              }, remainingTime);
+            } else {
               setInitialLoading(false);
-            }, remainingTime);
-          } else {
-            setInitialLoading(false);
+            }
           }
           
           // After goals are loaded, subscribe to zaps for those specific goals
