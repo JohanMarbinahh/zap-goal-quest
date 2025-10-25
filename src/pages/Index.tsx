@@ -81,12 +81,6 @@ const Index = () => {
   }, []);
 
   useEffect(() => {
-    // Skip if already subscribed
-    if (allGoals.length > 0) {
-      setInitialLoading(false);
-      return;
-    }
-    
     let goalSub: NDKSubscription | null = null;
     let profileSub: NDKSubscription | null = null;
     let zapSub: NDKSubscription | null = null;
@@ -94,8 +88,23 @@ const Index = () => {
     let reactionSub: NDKSubscription | null = null;
     let updateSub: NDKSubscription | null = null;
     let loadingTimeout: NodeJS.Timeout | null = null;
+    let hasSubscribed = false;
     
     const subscribeToEvents = async () => {
+      // Prevent multiple subscriptions
+      if (hasSubscribed) {
+        console.log('Already subscribed, skipping...');
+        return;
+      }
+      hasSubscribed = true;
+      
+      // Skip if we already have goals loaded
+      if (allGoals.length > 0) {
+        console.log('Goals already loaded, skipping subscription');
+        setInitialLoading(false);
+        return;
+      }
+      
       try {
         // Set a timeout to stop loading after 10 seconds regardless
         loadingTimeout = setTimeout(() => {
@@ -261,15 +270,34 @@ const Index = () => {
     
     // Cleanup subscriptions on unmount
     return () => {
-      if (goalSub) goalSub.stop();
-      if (profileSub) profileSub.stop();
-      if (zapSub) zapSub.stop();
-      if (contactSub) contactSub.stop();
-      if (reactionSub) reactionSub.stop();
-      if (updateSub) updateSub.stop();
+      console.log('🧹 Cleaning up subscriptions');
+      if (goalSub) {
+        goalSub.stop();
+        console.log('Stopped goal subscription');
+      }
+      if (profileSub) {
+        profileSub.stop();
+        console.log('Stopped profile subscription');
+      }
+      if (zapSub) {
+        zapSub.stop();
+        console.log('Stopped zap subscription');
+      }
+      if (contactSub) {
+        contactSub.stop();
+        console.log('Stopped contact subscription');
+      }
+      if (reactionSub) {
+        reactionSub.stop();
+        console.log('Stopped reaction subscription');
+      }
+      if (updateSub) {
+        updateSub.stop();
+        console.log('Stopped update subscription');
+      }
       if (loadingTimeout) clearTimeout(loadingTimeout);
     };
-  }, [dispatch, userPubkey]); // Only run once on mount, skip if data already exists
+  }, []); // Only run once on mount
 
   return (
     <main className="container mx-auto px-4 py-8">
