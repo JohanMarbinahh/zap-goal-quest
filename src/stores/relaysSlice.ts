@@ -55,8 +55,12 @@ const relaysSlice = createSlice({
         }
       });
     },
+    resetToDefaultRelays: (state) => {
+      state.relays = [...DEFAULT_RELAYS];
+      state.relayStatuses = [];
+    },
   },
 });
 
-export const { addRelay, removeRelay, updateRelayStatus, mergeDefaultRelays } = relaysSlice.actions;
+export const { addRelay, removeRelay, updateRelayStatus, mergeDefaultRelays, resetToDefaultRelays } = relaysSlice.actions;
 export default relaysSlice.reducer;
