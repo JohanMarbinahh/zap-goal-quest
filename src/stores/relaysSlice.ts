@@ -34,6 +34,8 @@ const relaysSlice = createSlice({
   reducers: {
     addRelay: (state, action: PayloadAction<string>) => {
       state.relays.push(action.payload);
+      // Remove any existing status for this relay to prevent duplicates
+      state.relayStatuses = state.relayStatuses.filter((r) => r.url !== action.payload);
     },
     removeRelay: (state, action: PayloadAction<string>) => {
       state.relays = state.relays.filter((r) => r !== action.payload);
@@ -52,11 +54,6 @@ const relaysSlice = createSlice({
       } else {
         state.relayStatuses.push({ url: action.payload.url, connected: action.payload.connected });
       }
-      
-      // Clean up statuses for relays no longer configured
-      state.relayStatuses = state.relayStatuses.filter((status) => 
-        state.relays.includes(status.url)
-      );
     },
     mergeDefaultRelays: (state) => {
       // Add any default relays that aren't already in the list
@@ -66,6 +63,10 @@ const relaysSlice = createSlice({
           state.relays.push(relay);
         }
       });
+      // Clean up statuses for relays no longer configured
+      state.relayStatuses = state.relayStatuses.filter((status) => 
+        state.relays.includes(status.url)
+      );
     },
     resetToDefaultRelays: (state) => {
       state.relays = [...DEFAULT_RELAYS];
