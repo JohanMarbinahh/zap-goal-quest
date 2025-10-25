@@ -136,36 +136,41 @@ const Index = () => {
           const currentGoals = store.getState().goals.goals;
           const goalEventIds = Object.values(currentGoals).map((g: Goal9041) => g.eventId);
           
-          console.log(`Subscribing to zaps for ${goalEventIds.length} goals`);
+          console.log(`🔍 Testing zap availability for ${goalEventIds.length} goals`);
           
-          if (goalEventIds.length > 0) {
-            // Subscribe to zaps filtered by goal event IDs
-            // Batch into groups of 100 to avoid filter size limits
-            const batchSize = 100;
-            for (let i = 0; i < goalEventIds.length; i += batchSize) {
-              const batch = goalEventIds.slice(i, i + batchSize);
-              const zapFilter: NDKFilter = { 
-                kinds: [9735 as any], 
-                "#e": batch 
-              };
-              const batchZapSub = ndk.subscribe(zapFilter, { closeOnEose: false });
-              
-              batchZapSub.on('event', (event) => {
-                console.log('Raw zap event:', event.id, event.tags);
-                const zap = parseZap9735(event);
-                if (zap) {
-                  console.log('✅ Parsed zap - Receipt ID:', zap.eventId, 'Target Goal ID (e-tag):', zap.targetEventId, 'Amount:', zap.amountMsat / 1000, 'sats');
-                  dispatch(addZap(zap));
-                } else {
-                  console.log('❌ Failed to parse zap event');
-                }
-              });
-              
-              batchZapSub.on('eose', () => {
-                console.log(`Zap batch ${Math.floor(i / batchSize) + 1} complete`);
-              });
+          // First, try subscribing to ALL recent zaps to see if any exist
+          // This helps us debug if the relay has zaps at all
+          const allZapsFilter: NDKFilter = { 
+            kinds: [9735 as any],
+            limit: 500 // Get recent 500 zaps to test
+          };
+          const testZapSub = ndk.subscribe(allZapsFilter, { closeOnEose: true });
+          
+          let zapCount = 0;
+          let matchingZapCount = 0;
+          const goalIdSet = new Set(goalEventIds);
+          
+          testZapSub.on('event', (event) => {
+            zapCount++;
+            const zap = parseZap9735(event);
+            if (zap) {
+              // Check if this zap targets any of our goals
+              if (zap.targetEventId && goalIdSet.has(zap.targetEventId)) {
+                matchingZapCount++;
+                console.log('✅ MATCHING ZAP! Receipt:', zap.eventId.substring(0, 8), 'Target:', zap.targetEventId.substring(0, 8), 'Amount:', zap.amountMsat / 1000, 'sats');
+                dispatch(addZap(zap));
+              }
             }
-          }
+          });
+          
+          testZapSub.on('eose', () => {
+            console.log(`📊 Zap scan: ${zapCount} total zaps found, ${matchingZapCount} match our goals`);
+            if (zapCount === 0) {
+              console.warn('⚠️ NO ZAPS on relay - relay may not store zap receipts');
+            } else if (matchingZapCount === 0) {
+              console.warn('⚠️ Zaps exist but NONE match our goal event IDs');
+            }
+          });
         });
 
         // Subscribe to kind 0 (profiles)
