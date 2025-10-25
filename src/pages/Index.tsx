@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Spinner } from '@/components/ui/spinner';
 import { GoalCard } from '@/components/GoalCard';
 import { CreateGoalDialog } from '@/components/CreateGoalDialog';
-import { GoalsFilter, FilterType, SortType } from '@/components/GoalsFilter';
+import { GoalsFilter, FilterType, SortType, SortDirection } from '@/components/GoalsFilter';
 import { useAppDispatch, useAppSelector } from '@/stores/hooks';
 import { store } from '@/stores/store';
 import { setGoal } from '@/stores/goalsSlice';
@@ -27,7 +27,8 @@ const Index = () => {
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const currentPage = parseInt(searchParams.get('page') || '1', 10);
   const [filter, setFilter] = useState<FilterType>('all');
-  const [sort, setSort] = useState<SortType>('recent');
+  const [sort, setSort] = useState<SortType>('date');
+  const [sortDirection, setSortDirection] = useState<SortDirection>('desc');
   
   const dispatch = useAppDispatch();
   const allGoals = useAppSelector(selectEnrichedGoals);
@@ -42,7 +43,7 @@ const Index = () => {
   // Memoize filtering, sorting, and pagination calculations
   const { totalPages, goals, totalGoalsCount, filteredGoalsCount } = useMemo(() => {
     const filtered = filterGoals(allGoals, filter, followingList);
-    const sorted = sortGoals(filtered, sort);
+    const sorted = sortGoals(filtered, sort, sortDirection);
     
     const pages = Math.min(Math.ceil(sorted.length / GOALS_PER_PAGE), MAX_PAGES);
     const startIndex = (currentPage - 1) * GOALS_PER_PAGE;
@@ -55,7 +56,7 @@ const Index = () => {
       totalGoalsCount: allGoals.length,
       filteredGoalsCount: sorted.length
     };
-  }, [allGoals, currentPage, filter, sort, followingList]);
+  }, [allGoals, currentPage, filter, sort, sortDirection, followingList]);
   
   const handlePageChange = useCallback((page: number) => {
     if (page === currentPage || page < 1 || page > totalPages) return;
@@ -72,6 +73,10 @@ const Index = () => {
     setSort(newSort);
     setSearchParams({ page: '1' });
   }, [setSearchParams]);
+  
+  const handleSortDirectionChange = useCallback((newDirection: SortDirection) => {
+    setSortDirection(newDirection);
+  }, []);
 
   useEffect(() => {
     // Skip if already subscribed
@@ -258,8 +263,10 @@ const Index = () => {
             <GoalsFilter
               filter={filter}
               sort={sort}
+              sortDirection={sortDirection}
               onFilterChange={handleFilterChange}
               onSortChange={handleSortChange}
+              onSortDirectionChange={handleSortDirectionChange}
               totalGoals={totalGoalsCount}
               filteredGoals={filteredGoalsCount}
               isLoggedIn={!!userPubkey}
@@ -276,7 +283,8 @@ const Index = () => {
                   variant="outline" 
                   onClick={() => {
                     setFilter('all');
-                    setSort('recent');
+                    setSort('date');
+                    setSortDirection('desc');
                     setSearchParams({ page: '1' });
                   }}
                 >

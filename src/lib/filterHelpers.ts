@@ -1,5 +1,5 @@
 import { EnrichedGoal } from '@/stores/selectors';
-import { FilterType, SortType } from '@/components/GoalsFilter';
+import { FilterType, SortType, SortDirection } from '@/components/GoalsFilter';
 
 export const filterGoals = (
   goals: EnrichedGoal[],
@@ -19,24 +19,25 @@ export const filterGoals = (
   }
 };
 
-export const sortGoals = (goals: EnrichedGoal[], sortType: SortType): EnrichedGoal[] => {
+export const sortGoals = (
+  goals: EnrichedGoal[], 
+  sortType: SortType, 
+  direction: SortDirection
+): EnrichedGoal[] => {
   const sorted = [...goals];
+  const multiplier = direction === 'desc' ? -1 : 1;
   
   switch (sortType) {
-    case 'recent':
-      return sorted.sort((a, b) => b.createdAt - a.createdAt);
-    case 'oldest':
-      return sorted.sort((a, b) => a.createdAt - b.createdAt);
-    case 'most-sats':
-      return sorted.sort((a, b) => b.raised - a.raised);
-    case 'least-sats':
-      return sorted.sort((a, b) => a.raised - b.raised);
-    case 'best-progress':
-      return sorted.sort((a, b) => b.progress - a.progress);
-    case 'most-zaps':
-      return sorted.sort((a, b) => b.zaps.length - a.zaps.length);
-    case 'highest-target':
-      return sorted.sort((a, b) => b.targetSats - a.targetSats);
+    case 'date':
+      return sorted.sort((a, b) => multiplier * (b.createdAt - a.createdAt));
+    case 'contributed':
+      return sorted.sort((a, b) => multiplier * (b.raised - a.raised));
+    case 'progress':
+      return sorted.sort((a, b) => multiplier * (b.progress - a.progress));
+    case 'zaps':
+      return sorted.sort((a, b) => multiplier * (b.zaps.length - a.zaps.length));
+    case 'target':
+      return sorted.sort((a, b) => multiplier * (b.targetSats - a.targetSats));
     default:
       return sorted;
   }
