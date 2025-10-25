@@ -4,7 +4,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { useEffect } from "react";
-import { initNDK, setupAuth } from "@/lib/ndk";
+import { initNDK, setupAuth, getNDK } from "@/lib/ndk";
 import { useAppSelector } from "@/stores/hooks";
 import Index from "./pages/Index";
 import GoalDetail from "./pages/GoalDetail";
@@ -23,8 +23,10 @@ const App = () => {
   useEffect(() => {
     const init = async () => {
       try {
+        console.log('🚀 App useEffect running. PrivateKey exists:', !!privateKey, 'Length:', privateKey?.length);
         await initNDK();
         await setupAuth();
+        console.log('✅ Init complete. NDK signer exists:', !!getNDK().signer);
       } catch (error) {
         console.error('Failed to initialize NDK:', error);
       }

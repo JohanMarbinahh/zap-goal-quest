@@ -60,8 +60,11 @@ export async function setupAuth() {
   const authState = store.getState().auth;
 
   console.log('🔐 setupAuth called. Auth state:', { 
-    hasPubkey: !!authState.pubkey, 
-    hasPrivateKey: !!authState.privateKey 
+    hasPubkey: !!authState.pubkey,
+    pubkey: authState.pubkey?.slice(0, 8),
+    hasPrivateKey: !!authState.privateKey,
+    privateKeyLength: authState.privateKey?.length,
+    currentSignerExists: !!ndk.signer
   });
 
   // If already authenticated with private key, restore signer
@@ -91,6 +94,8 @@ export async function loginWithPrivateKey(privateKey: string) {
   const ndk = getNDK();
   
   try {
+    console.log('🔑 loginWithPrivateKey called');
+    
     // Handle both nsec and hex formats
     let hexKey = privateKey;
     if (privateKey.startsWith('nsec')) {
@@ -109,7 +114,23 @@ export async function loginWithPrivateKey(privateKey: string) {
     const user = await signer.user();
     const npub = nip19.npubEncode(user.pubkey);
 
+    console.log('✅ Setting signer and storing auth data:', {
+      pubkey: user.pubkey.slice(0, 8),
+      npub: npub.slice(0, 12),
+      privateKeyLength: hexKey.length,
+      signerSet: !!ndk.signer
+    });
+
     store.dispatch(setPubkey({ pubkey: user.pubkey, npub, privateKey: hexKey }));
+    
+    // Verify it was stored
+    const storedAuth = store.getState().auth;
+    console.log('✅ Verified stored auth:', {
+      hasPubkey: !!storedAuth.pubkey,
+      hasPrivateKey: !!storedAuth.privateKey,
+      privateKeyLength: storedAuth.privateKey?.length
+    });
+    
     return { pubkey: user.pubkey, npub };
   } catch (error) {
     console.error('Private key login failed:', error);
