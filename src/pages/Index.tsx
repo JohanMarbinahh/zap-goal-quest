@@ -23,8 +23,9 @@ import { NDKFilter, NDKSubscription } from '@nostr-dev-kit/ndk';
 
 const GOALS_PER_PAGE = 30;
 const MAX_PAGES = 5;
-const MIN_GOALS_TO_SHOW = 30; // Show page as soon as we have this many goals
-const LOADING_TIMEOUT = 5000; // 5 seconds max loading time
+const MIN_GOALS_TO_SHOW = 100; // Wait for more goals before showing
+const MIN_LOADING_TIME = 2000; // Minimum 2 seconds loading
+const MAX_LOADING_TIME = 8000; // Maximum 8 seconds loading
 
 const Index = () => {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -43,16 +44,13 @@ const Index = () => {
   
   // Initialize loading state based on whether we already have goals
   const [initialLoading, setInitialLoading] = useState(allGoals.length === 0);
-  const [goalsLoadedCount, setGoalsLoadedCount] = useState(allGoals.length);
+  const [goalsLoadedCount, setGoalsLoadedCount] = useState(0);
+  const [loadStartTime] = useState(Date.now());
 
-  // Update goals loaded count whenever allGoals changes
+  // Update goals loaded count during loading only
   useEffect(() => {
-    setGoalsLoadedCount(allGoals.length);
-    
-    // Auto-hide loading spinner once we have enough goals
-    if (initialLoading && allGoals.length >= MIN_GOALS_TO_SHOW) {
-      console.log(`✅ ${allGoals.length} goals loaded, showing content early!`);
-      setInitialLoading(false);
+    if (initialLoading) {
+      setGoalsLoadedCount(allGoals.length);
     }
   }, [allGoals.length, initialLoading]);
   
@@ -120,11 +118,11 @@ const Index = () => {
       }
       
       try {
-        // Set a timeout to stop loading after 5 seconds regardless
+        // Set a timeout to stop loading after max time
         loadingTimeout = setTimeout(() => {
-          console.log('⏱️ Loading timeout - stopping spinner');
+          console.log('⏱️ Max loading time reached - showing content');
           setInitialLoading(false);
-        }, LOADING_TIMEOUT);
+        }, MAX_LOADING_TIME);
 
         // Wait for NDK to be initialized
         let ndk;
@@ -154,9 +152,10 @@ const Index = () => {
         goalSub.on('event', (event) => {
           const goal = parseGoal9041(event);
           if (goal) {
-            const currentCount = store.getState().goals.goals;
-            const newCount = Object.keys(currentCount).length + 1;
-            console.log(`💰 Goal ${newCount} loaded:`, goal.title.substring(0, 30));
+            const currentCount = Object.keys(store.getState().goals.goals).length;
+            if (currentCount % 50 === 0) {
+              console.log(`💰 ${currentCount} goals loaded`);
+            }
             
             dispatch(setGoal({ goalId: goal.goalId, goal }));
             // Add mock reactions and profiles for demo purposes
@@ -164,21 +163,28 @@ const Index = () => {
             Object.entries(mockProfiles).forEach(([pubkey, profile]) => {
               dispatch(setProfile({ pubkey, profile }));
             });
-            
-            // Check if we've reached minimum goals to show content
-            if (initialLoading && newCount >= MIN_GOALS_TO_SHOW) {
-              console.log(`✅ Reached ${MIN_GOALS_TO_SHOW} goals, showing content!`);
-              if (loadingTimeout) clearTimeout(loadingTimeout);
-              setInitialLoading(false);
-            }
           }
         });
 
         goalSub.on('eose', () => {
           const finalCount = Object.keys(store.getState().goals.goals).length;
-          console.log(`📋 Goal subscription complete - ${finalCount} total goals loaded`);
-          if (loadingTimeout) clearTimeout(loadingTimeout);
-          setInitialLoading(false);
+          const elapsedTime = Date.now() - loadStartTime;
+          
+          console.log(`📋 Goal subscription complete - ${finalCount} total goals loaded in ${elapsedTime}ms`);
+          
+          // Ensure minimum loading time has passed
+          const remainingTime = Math.max(0, MIN_LOADING_TIME - elapsedTime);
+          
+          if (remainingTime > 0) {
+            console.log(`⏳ Waiting ${remainingTime}ms to meet minimum loading time`);
+            setTimeout(() => {
+              if (loadingTimeout) clearTimeout(loadingTimeout);
+              setInitialLoading(false);
+            }, remainingTime);
+          } else {
+            if (loadingTimeout) clearTimeout(loadingTimeout);
+            setInitialLoading(false);
+          }
           
           // After goals are loaded, subscribe to zaps for those specific goals
           const currentGoals = store.getState().goals.goals;
@@ -344,7 +350,7 @@ const Index = () => {
 
         {initialLoading ? (
           <RelayLoadingStatus goalsLoaded={goalsLoadedCount} targetGoals={MIN_GOALS_TO_SHOW} />
-        ) : totalGoalsCount === 0 ? (
+        ) : allGoals.length === 0 ? (
           <div className="text-center py-20">
             <div className="inline-flex p-6 rounded-full bg-primary/10 mb-4">
               <Plus className="w-12 h-12 text-primary" />

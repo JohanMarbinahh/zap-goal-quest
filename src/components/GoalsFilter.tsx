@@ -36,8 +36,8 @@ export const GoalsFilter = memo(({
       <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between">
         <div className="flex items-center gap-2">
           <Filter className="w-5 h-5 text-muted-foreground" />
-          <span className="text-sm text-muted-foreground">
-            Showing {filteredGoals} of {totalGoals} goals
+          <span className="text-sm font-medium text-muted-foreground">
+            {totalGoals} {totalGoals === 1 ? 'goal' : 'goals'}
           </span>
         </div>
         
