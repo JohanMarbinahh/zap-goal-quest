@@ -46,6 +46,9 @@ const Index = () => {
   const [initialLoading, setInitialLoading] = useState(allGoals.length === 0);
   const [goalsLoadedCount, setGoalsLoadedCount] = useState(0);
   const [loadStartTime] = useState(Date.now());
+  
+  // Snapshot goals when loading completes to freeze the UI
+  const [displayGoals, setDisplayGoals] = useState(allGoals);
 
   // Update goals loaded count during loading only
   useEffect(() => {
@@ -54,9 +57,9 @@ const Index = () => {
     }
   }, [allGoals.length, initialLoading]);
   
-  // Memoize filtering, sorting, and pagination calculations
+  // Memoize filtering, sorting, and pagination calculations - use displayGoals to freeze UI
   const { totalPages, goals, totalGoalsCount, filteredGoalsCount } = useMemo(() => {
-    const filtered = filterGoals(allGoals, filter, followingList);
+    const filtered = filterGoals(displayGoals, filter, followingList);
     const sorted = sortGoals(filtered, sort, sortDirection);
     
     const pages = Math.min(Math.ceil(sorted.length / GOALS_PER_PAGE), MAX_PAGES);
@@ -67,10 +70,10 @@ const Index = () => {
     return { 
       totalPages: pages, 
       goals: pageGoals,
-      totalGoalsCount: allGoals.length,
+      totalGoalsCount: displayGoals.length,
       filteredGoalsCount: sorted.length
     };
-  }, [allGoals, currentPage, filter, sort, sortDirection, followingList]);
+  }, [displayGoals, currentPage, filter, sort, sortDirection, followingList]);
   
   const handlePageChange = useCallback((page: number) => {
     if (page === currentPage || page < 1 || page > totalPages) return;
@@ -113,6 +116,7 @@ const Index = () => {
       // Skip if we already have goals loaded
       if (allGoals.length > 0) {
         console.log('Goals already loaded, skipping subscription');
+        setDisplayGoals(allGoals);
         setInitialLoading(false);
         return;
       }
@@ -121,6 +125,8 @@ const Index = () => {
         // Set a timeout to stop loading after max time
         loadingTimeout = setTimeout(() => {
           console.log('⏱️ Max loading time reached - showing content');
+          // Snapshot current goals to freeze the UI
+          setDisplayGoals(selectEnrichedGoals(store.getState()));
           setInitialLoading(false);
         }, MAX_LOADING_TIME);
 
@@ -141,6 +147,7 @@ const Index = () => {
 
         if (!ndk) {
           console.error('NDK failed to initialize');
+          setDisplayGoals([]);
           setInitialLoading(false);
           return;
         }
@@ -166,6 +173,8 @@ const Index = () => {
             if (currentCount >= MIN_GOALS_TO_SHOW && elapsedTime >= MIN_LOADING_TIME) {
               console.log(`✅ ${currentCount} goals loaded - showing page!`);
               if (loadingTimeout) clearTimeout(loadingTimeout);
+              // Snapshot current goals to freeze the UI
+              setDisplayGoals(selectEnrichedGoals(store.getState()));
               setInitialLoading(false);
             }
           }
@@ -184,10 +193,14 @@ const Index = () => {
             console.log(`⏳ Waiting ${remainingTime}ms to meet minimum loading time`);
             setTimeout(() => {
               if (loadingTimeout) clearTimeout(loadingTimeout);
+              // Snapshot current goals to freeze the UI
+              setDisplayGoals(selectEnrichedGoals(store.getState()));
               setInitialLoading(false);
             }, remainingTime);
           } else {
             if (loadingTimeout) clearTimeout(loadingTimeout);
+            // Snapshot current goals to freeze the UI
+            setDisplayGoals(selectEnrichedGoals(store.getState()));
             setInitialLoading(false);
           }
           
@@ -355,7 +368,7 @@ const Index = () => {
 
         {initialLoading ? (
           <RelayLoadingStatus goalsLoaded={goalsLoadedCount} />
-        ) : allGoals.length === 0 ? (
+        ) : displayGoals.length === 0 ? (
           <div className="text-center py-20">
             <div className="inline-flex p-6 rounded-full bg-primary/10 mb-4">
               <Plus className="w-12 h-12 text-primary" />
