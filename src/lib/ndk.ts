@@ -7,6 +7,14 @@ import { nip19 } from 'nostr-tools';
 let ndkInstance: NDK | null = null;
 
 export async function initNDK() {
+  // If already initialized, return existing instance
+  if (ndkInstance) {
+    console.log('✅ NDK already initialized, returning existing instance');
+    return ndkInstance;
+  }
+
+  console.log('🔧 Initializing NDK for the first time');
+  
   // Ensure default relays are merged with persisted ones
   store.dispatch(mergeDefaultRelays());
   const relays = store.getState().relays.relays;
