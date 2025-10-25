@@ -46,17 +46,11 @@ const Index = () => {
   const [goalsLoadedCount, setGoalsLoadedCount] = useState(0);
   const [loadStartTime] = useState(Date.now());
 
-  // Throttle counter updates to avoid excessive re-renders
+  // Update counter immediately during loading for quick visual feedback
   useEffect(() => {
-    if (!initialLoading) return;
-    
-    const updateCounter = () => {
+    if (initialLoading) {
       setGoalsLoadedCount(allGoals.length);
-    };
-    
-    // Throttle updates to every 100ms instead of on every goal
-    const timeoutId = setTimeout(updateCounter, 100);
-    return () => clearTimeout(timeoutId);
+    }
   }, [allGoals.length, initialLoading]);
   
   // Memoize filtering, sorting, and pagination calculations
@@ -144,80 +138,52 @@ const Index = () => {
           return;
         }
 
-        // Subscribe to kind 9041 (goals)
-        const goalFilter: NDKFilter = { kinds: [9041 as any], limit: MAX_GOALS_TO_LOAD };
+        // Subscribe to kind 9041 (goals) - get all available
+        const goalFilter: NDKFilter = { kinds: [9041 as any] };
         goalSub = ndk.subscribe(goalFilter, { closeOnEose: false });
 
-        // Batch goals to reduce Redux dispatches
-        let goalBatch: Goal9041[] = [];
-        let batchTimeout: NodeJS.Timeout | null = null;
-        
-        const flushBatch = () => {
-          if (goalBatch.length > 0) {
-            goalBatch.forEach(goal => {
-              dispatch(setGoal({ goalId: goal.goalId, goal }));
-            });
-            goalBatch = [];
-          }
-        };
-
-        const checkIfShouldStopLoading = () => {
-          const currentCount = Object.keys(store.getState().goals.goals).length;
-          const elapsedTime = Date.now() - loadStartTime;
-          
-          if (currentCount >= MAX_GOALS_TO_LOAD && elapsedTime >= MIN_LOADING_TIME) {
-            console.log(`✅ Reached ${currentCount} goals - stopping and showing page!`);
-            if (batchTimeout) clearTimeout(batchTimeout);
-            flushBatch();
-            if (goalSub) goalSub.stop();
-            
-            // Add mock data
-            const currentGoals = Object.values(store.getState().goals.goals);
-            currentGoals.slice(0, 10).forEach((goal: Goal9041) => {
-              dispatch(addMockReactions(goal.eventId));
-            });
-            Object.entries(mockProfiles).forEach(([pubkey, profile]) => {
-              dispatch(setProfile({ pubkey, profile }));
-            });
-            
-            setInitialLoading(false);
-            return true;
-          }
-          return false;
-        };
+        let loadingScreenShown = false;
 
         goalSub.on('event', (event) => {
           const goal = parseGoal9041(event);
           if (goal) {
-            goalBatch.push(goal);
+            // Dispatch immediately for quick counter updates during loading
+            dispatch(setGoal({ goalId: goal.goalId, goal }));
             
-            // Batch dispatches every 50ms or when batch reaches 10 goals
-            if (goalBatch.length >= 10) {
-              if (batchTimeout) clearTimeout(batchTimeout);
-              flushBatch();
-              checkIfShouldStopLoading();
-            } else if (!batchTimeout) {
-              batchTimeout = setTimeout(() => {
-                flushBatch();
-                batchTimeout = null;
-                checkIfShouldStopLoading();
-              }, 50);
+            // Add mock data for first few goals during initial load
+            if (!loadingScreenShown) {
+              if (Object.keys(store.getState().goals.goals).length <= 10) {
+                dispatch(addMockReactions(goal.eventId));
+              }
+            }
+            
+            // Check if we should show the page
+            const currentCount = Object.keys(store.getState().goals.goals).length;
+            const elapsedTime = Date.now() - loadStartTime;
+            
+            if (!loadingScreenShown && currentCount >= MAX_GOALS_TO_LOAD && elapsedTime >= MIN_LOADING_TIME) {
+              console.log(`✅ Reached ${currentCount} goals - showing page! Continuing to load in background...`);
+              loadingScreenShown = true;
+              
+              // Add mock profiles
+              Object.entries(mockProfiles).forEach(([pubkey, profile]) => {
+                dispatch(setProfile({ pubkey, profile }));
+              });
+              
+              setInitialLoading(false);
+              // Don't stop the subscription - let it continue in background
             }
           }
         });
 
         goalSub.on('eose', () => {
-          // Flush any remaining batched goals
-          if (batchTimeout) clearTimeout(batchTimeout);
-          flushBatch();
-          
           const finalCount = Object.keys(store.getState().goals.goals).length;
           const elapsedTime = Date.now() - loadStartTime;
           
           console.log(`📋 Goal subscription complete - ${finalCount} total goals loaded in ${elapsedTime}ms`);
           
-          // Add mock data only once at the end if not already done
-          if (initialLoading) {
+          // If still loading, show the page now
+          if (!loadingScreenShown) {
             const currentGoals = Object.values(store.getState().goals.goals);
             currentGoals.slice(0, 10).forEach((goal: Goal9041) => {
               dispatch(addMockReactions(goal.eventId));
