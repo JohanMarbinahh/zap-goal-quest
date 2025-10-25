@@ -92,7 +92,7 @@ export const GoalCard = memo(({ goal }: GoalCardProps) => {
             </span>
           </div>
           <Progress value={progress} className="h-2" />
-          <div className="flex justify-between items-center">
+          <div className="flex justify-between items-center flex-wrap gap-2">
             <div className="flex gap-3 text-xs text-muted-foreground">
               <span className="flex items-center gap-1">
                 <ThumbsUp className="w-3 h-3" />
@@ -107,7 +107,20 @@ export const GoalCard = memo(({ goal }: GoalCardProps) => {
                 {goal.updateCount}
               </span>
             </div>
-            <div className="text-xs text-muted-foreground">
+            {goal.topReactions.length > 0 && (
+              <div className="flex gap-1.5">
+                {goal.topReactions.map(({ emoji, count }) => (
+                  <div
+                    key={emoji}
+                    className="flex items-center gap-0.5 px-2 py-0.5 rounded-full bg-secondary/50 text-xs"
+                  >
+                    <span>{emoji}</span>
+                    <span className="font-medium">{count}x</span>
+                  </div>
+                ))}
+              </div>
+            )}
+            <div className="text-xs text-muted-foreground ml-auto">
               {progress.toFixed(1)}% funded
             </div>
           </div>

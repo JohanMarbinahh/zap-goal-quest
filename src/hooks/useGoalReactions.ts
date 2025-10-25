@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useAppDispatch, useAppSelector } from '@/stores/hooks';
 import { setProfile } from '@/stores/profilesSlice';
+import { addReaction } from '@/stores/reactionsSlice';
 import { getNDK } from '@/lib/ndk';
 import { parseReaction7 } from '@/lib/nostrHelpers';
 import type { NDKFilter, NDKSubscription, NDKEvent } from '@nostr-dev-kit/ndk';
@@ -53,6 +54,10 @@ export const useGoalReactions = (goalEventId: string) => {
         reactionSub.on('event', (event: NDKEvent) => {
           const reaction = parseReaction7(event);
           if (reaction) {
+            // Dispatch to Redux store so all components can access it
+            dispatch(addReaction(reaction));
+            
+            // Also update local state for this component
             setReactions(prev => {
               const exists = prev.some(r => r.eventId === reaction.eventId);
               return exists ? prev : [...prev, reaction];

@@ -17,6 +17,7 @@ export interface EnrichedGoal extends Goal9041 {
   likeCount: number;
   dislikeCount: number;
   updateCount: number;
+  topReactions: Array<{ emoji: string; count: number }>;
 }
 
 // Memoized selector that enriches all goals with profile and zap data
@@ -33,6 +34,21 @@ export const selectEnrichedGoals = createSelector(
       const reactions = reactionsByGoal[goal.eventId] || [];
       const likeCount = reactions.filter(r => r.content === '+' || r.content === '').length;
       const dislikeCount = reactions.filter(r => r.content === '-').length;
+      
+      // Calculate top emoji reactions (excluding +, -, and empty string)
+      const emojiReactions = reactions.filter(r => 
+        r.content !== '+' && r.content !== '-' && r.content !== ''
+      );
+      
+      const emojiCounts = emojiReactions.reduce((acc, r) => {
+        acc[r.content] = (acc[r.content] || 0) + 1;
+        return acc;
+      }, {} as Record<string, number>);
+      
+      const topReactions = Object.entries(emojiCounts)
+        .map(([emoji, count]) => ({ emoji, count }))
+        .sort((a, b) => b.count - a.count)
+        .slice(0, 3); // Top 3 emoji reactions
 
       return {
         ...goal,
@@ -43,6 +59,7 @@ export const selectEnrichedGoals = createSelector(
         likeCount,
         dislikeCount,
         updateCount: 0,   // Calculated locally per component
+        topReactions,
       };
     });
   }
