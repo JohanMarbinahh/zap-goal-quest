@@ -4,7 +4,7 @@ import { Badge } from '@/components/ui/badge';
 import { Filter } from 'lucide-react';
 
 export type FilterType = 'all' | 'completed' | 'active' | 'following';
-export type SortType = 'recent' | 'oldest' | 'most-sats' | 'least-sats' | 'best-progress' | 'most-zaps';
+export type SortType = 'recent' | 'oldest' | 'most-sats' | 'least-sats' | 'best-progress' | 'most-zaps' | 'highest-target';
 
 interface GoalsFilterProps {
   filter: FilterType;
@@ -59,6 +59,7 @@ export const GoalsFilter = memo(({
               <SelectItem value="least-sats">Least Sats</SelectItem>
               <SelectItem value="best-progress">Best Progress</SelectItem>
               <SelectItem value="most-zaps">Most Zaps</SelectItem>
+              <SelectItem value="highest-target">Highest Target</SelectItem>
             </SelectContent>
           </Select>
         </div>
@@ -78,6 +79,7 @@ export const GoalsFilter = memo(({
                      sort === 'most-sats' ? 'Most Sats' :
                      sort === 'least-sats' ? 'Least Sats' :
                      sort === 'best-progress' ? 'Best Progress' :
+                     sort === 'highest-target' ? 'Highest Target' :
                      'Most Zaps'}
             </Badge>
           )}
