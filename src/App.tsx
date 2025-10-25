@@ -3,7 +3,7 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { initNDK, setupAuth } from "@/lib/ndk";
 import { useAppSelector } from "@/stores/hooks";
 import Index from "./pages/Index";
@@ -18,18 +18,33 @@ const queryClient = new QueryClient();
 
 const App = () => {
   const isAuthenticated = useAppSelector((state) => !!state.auth.pubkey);
+  const [ndkReady, setNdkReady] = useState(false);
 
   useEffect(() => {
     const init = async () => {
       try {
         await initNDK();
         await setupAuth();
+        setNdkReady(true);
       } catch (error) {
         console.error('Failed to initialize NDK:', error);
+        setNdkReady(true); // Still allow app to render
       }
     };
     init();
   }, []);
+
+  // Wait for NDK to be ready before rendering authenticated routes
+  if (!ndkReady) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
+          <p className="text-muted-foreground">Initializing...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <QueryClientProvider client={queryClient}>
