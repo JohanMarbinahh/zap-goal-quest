@@ -1,16 +1,15 @@
 import NDK, { NDKEvent, NDKPrivateKeySigner } from '@nostr-dev-kit/ndk';
 import { store } from '@/stores/store';
-import { updateRelayStatus } from '@/stores/relaysSlice';
+import { updateRelayStatus, resetToDefaultRelays } from '@/stores/relaysSlice';
 import { setPubkey } from '@/stores/authSlice';
 import { nip19 } from 'nostr-tools';
 
 let ndkInstance: NDK | null = null;
 
 export async function initNDK() {
-  // Auto-cleanup: if more than 10 relays, reset to defaults
+  // Auto-cleanup: if more than 10 relays, reset to top 10 defaults
   const currentRelays = store.getState().relays.relays;
   if (currentRelays.length > 10) {
-    const { resetToDefaultRelays } = await import('@/stores/relaysSlice');
     store.dispatch(resetToDefaultRelays());
   }
   
