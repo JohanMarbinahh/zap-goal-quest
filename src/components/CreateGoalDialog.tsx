@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { v4 as uuidv4 } from 'uuid';
+import { z } from 'zod';
 import { NDKEvent } from '@nostr-dev-kit/ndk';
 import {
   Dialog,
@@ -25,6 +26,15 @@ import { getNDK, publishEvent } from '@/lib/ndk';
 import { useAppDispatch, useAppSelector } from '@/stores/hooks';
 import { setGoal } from '@/stores/goalsSlice';
 import { parseGoal9041 } from '@/lib/nostrHelpers';
+
+// Input validation schema
+const goalSchema = z.object({
+  title: z.string().trim().min(1, 'Title is required').max(200, 'Title must be less than 200 characters'),
+  targetSats: z.number().positive('Target must be a positive number').int('Target must be a whole number'),
+  imageUrl: z.string().url('Invalid URL').optional().or(z.literal('')),
+  description: z.string().trim().max(5000, 'Description must be less than 5000 characters').optional(),
+  status: z.enum(['active', 'paused', 'done']),
+});
 
 interface CreateGoalDialogProps {
   open: boolean;
@@ -73,10 +83,20 @@ export const CreateGoalDialog = ({ open, onOpenChange }: CreateGoalDialogProps) 
       const goalId = uuidv4();
       const target = parseInt(targetSats, 10);
 
-      if (!title || isNaN(target) || target <= 0) {
+      // Validate inputs
+      const validationResult = goalSchema.safeParse({
+        title,
+        targetSats: target,
+        imageUrl: imageUrl || '',
+        description: description || '',
+        status,
+      });
+
+      if (!validationResult.success) {
+        const firstError = validationResult.error.errors[0];
         toast({
           title: 'Validation Error',
-          description: 'Please provide a valid title and target amount.',
+          description: firstError.message,
           variant: 'destructive',
         });
         setIsLoading(false);
@@ -189,8 +209,12 @@ export const CreateGoalDialog = ({ open, onOpenChange }: CreateGoalDialogProps) 
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
                 rows={4}
+                maxLength={5000}
                 className="resize-none"
               />
+              <p className="text-xs text-muted-foreground">
+                {description.length}/5000 characters
+              </p>
             </div>
 
             <div className="space-y-2">
