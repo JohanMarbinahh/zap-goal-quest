@@ -68,63 +68,85 @@ export const GoalReactions = ({ goalEventId, goalAuthorPubkey }: GoalReactionsPr
     }
   };
 
+  // Get all unique emojis with counts
+  const allEmojis = Object.entries(reactionCounts)
+    .sort((a, b) => b[1] - a[1]); // Sort by count descending
+
   return (
     <Card>
-      <CardHeader>
-        <div className="flex items-center justify-between">
-          <CardTitle>Reactions ({reactions.length})</CardTitle>
-          <div className="flex gap-2">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => handleReact('❤️')}
-              className="gap-1"
-            >
-              <Heart className="w-4 h-4" />
-              {reactionCounts['❤️'] || 0}
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => handleReact('🔥')}
-              className="gap-1"
-            >
-              <Flame className="w-4 h-4" />
-              {reactionCounts['🔥'] || 0}
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => handleReact('+')}
-              className="gap-1"
-            >
-              <ThumbsUp className="w-4 h-4" />
-              {reactionCounts['+'] || 0}
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => handleReact('-')}
-              className="gap-1"
-            >
-              <ThumbsDown className="w-4 h-4" />
-              {reactionCounts['-'] || 0}
-            </Button>
-          </div>
+      <CardHeader className="space-y-3">
+        {/* Quick action buttons */}
+        <div className="flex flex-wrap gap-2">
+          <Button
+            variant="secondary"
+            size="sm"
+            onClick={() => handleReact('❤️')}
+            className="gap-1.5 rounded-full"
+          >
+            <Heart className="w-4 h-4" />
+            {reactionCounts['❤️'] || 0}
+          </Button>
+          <Button
+            variant="secondary"
+            size="sm"
+            onClick={() => handleReact('🔥')}
+            className="gap-1.5 rounded-full"
+          >
+            <Flame className="w-4 h-4" />
+            {reactionCounts['🔥'] || 0}
+          </Button>
+          <Button
+            variant="secondary"
+            size="sm"
+            onClick={() => handleReact('+')}
+            className="gap-1.5 rounded-full"
+          >
+            <ThumbsUp className="w-4 h-4" />
+            {reactionCounts['+'] || 0}
+          </Button>
+          <Button
+            variant="secondary"
+            size="sm"
+            onClick={() => handleReact('-')}
+            className="gap-1.5 rounded-full"
+          >
+            <ThumbsDown className="w-4 h-4" />
+            {reactionCounts['-'] || 0}
+          </Button>
         </div>
-        <div className="flex gap-4 text-sm mt-2">
-          <Badge variant="default" className="gap-1">
+        
+        {/* Positive/Negative summary */}
+        <div className="flex gap-2">
+          <Badge variant="default" className="gap-1.5">
             <ThumbsUp className="w-3 h-3" />
             {positiveReactions.length} Positive
           </Badge>
-          <Badge variant="secondary" className="gap-1">
+          <Badge variant="secondary" className="gap-1.5">
             <ThumbsDown className="w-3 h-3" />
             {negativeReactions.length} Negative
           </Badge>
         </div>
       </CardHeader>
-      <CardContent>
-        <div className="space-y-3 max-h-[400px] overflow-y-auto">
+      
+      <CardContent className="space-y-4">
+        {/* All unique emojis section */}
+        {allEmojis.length > 0 && (
+          <div className="flex flex-wrap gap-2 pb-4 border-b border-border">
+            {allEmojis.map(([emoji, count]) => (
+              <button
+                key={emoji}
+                onClick={() => handleReact(emoji)}
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-secondary/50 hover:bg-secondary transition-colors text-sm"
+              >
+                <span className="text-lg">{emoji}</span>
+                <span className="font-medium">{count}</span>
+              </button>
+            ))}
+          </div>
+        )}
+        
+        {/* Individual reactions feed */}
+        <div className="space-y-2 max-h-[400px] overflow-y-auto">
           {reactions
             .sort((a, b) => b.createdAt - a.createdAt)
             .map((reaction) => {
@@ -134,22 +156,22 @@ export const GoalReactions = ({ goalEventId, goalAuthorPubkey }: GoalReactionsPr
               return (
                 <div
                   key={reaction.eventId}
-                  className="flex items-center gap-3 p-3 rounded-lg bg-secondary/50"
+                  className="flex items-center gap-3 p-2.5 rounded-lg bg-secondary/30 hover:bg-secondary/50 transition-colors"
                 >
-                  <Avatar className="w-8 h-8">
+                  <Avatar className="w-7 h-7">
                     <AvatarImage src={reactorProfile?.picture} />
                     <AvatarFallback className="bg-primary/10 text-primary text-xs">
                       {reactorProfile?.name?.[0]?.toUpperCase() || 'R'}
                     </AvatarFallback>
                   </Avatar>
-                  <div className="flex-1">
+                  <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2">
-                      <span className="font-semibold text-sm">
+                      <span className="font-medium text-sm truncate">
                         {reactorProfile?.displayName ||
                           reactorProfile?.name ||
                           shortNpub(reaction.reactorPubkey)}
                       </span>
-                      <span className="text-2xl">{reaction.content}</span>
+                      <span className="text-xl">{reaction.content}</span>
                     </div>
                     <span className="text-xs text-muted-foreground">
                       {formatRelativeTime(reaction.createdAt)}
