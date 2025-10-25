@@ -9,9 +9,15 @@ import {
 
 export const RelayStatus = () => {
   const relayStatuses = useAppSelector((state) => state.relays.relayStatuses);
+  const configuredRelays = useAppSelector((state) => state.relays.relays);
 
-  const connectedCount = relayStatuses.filter((r) => r.connected).length;
-  const totalCount = relayStatuses.length;
+  // Filter to only show configured relays
+  const filteredStatuses = relayStatuses.filter((status) => 
+    configuredRelays.includes(status.url)
+  );
+
+  const connectedCount = filteredStatuses.filter((r) => r.connected).length;
+  const totalCount = configuredRelays.length; // Use configured count, not status count
   const isConnected = connectedCount > 0;
 
   return (
@@ -32,7 +38,7 @@ export const RelayStatus = () => {
         <TooltipContent>
           <div className="space-y-1">
             <p className="font-semibold">Relay Connections</p>
-            {relayStatuses.map((relay) => (
+            {filteredStatuses.map((relay) => (
               <div key={relay.url} className="flex items-center gap-2 text-xs">
                 <div
                   className={`w-2 h-2 rounded-full ${relay.connected ? 'bg-success' : 'bg-destructive'

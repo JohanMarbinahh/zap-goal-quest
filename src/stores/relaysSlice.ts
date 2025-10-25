@@ -39,6 +39,11 @@ const relaysSlice = createSlice({
       state.relays = state.relays.filter((r) => r !== action.payload);
     },
     updateRelayStatus: (state, action: PayloadAction<{ url: string; connected: boolean }>) => {
+      // Only track status for relays that are in our configured list
+      if (!state.relays.includes(action.payload.url)) {
+        return;
+      }
+      
       const existing = state.relayStatuses.find((r) => r.url === action.payload.url);
       if (existing) {
         existing.connected = action.payload.connected;

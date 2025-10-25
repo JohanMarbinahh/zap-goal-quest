@@ -15,13 +15,25 @@ export async function initNDK() {
     explicitRelayUrls: relays,
   });
 
-  // Set up relay status tracking
+  // Set up relay status tracking - only for configured relays
   ndkInstance.pool.on('relay:connect', (relay) => {
-    store.dispatch(updateRelayStatus({ url: relay.url, connected: true }));
+    const normalizedUrl = relay.url.replace(/\/$/, ''); // Remove trailing slash
+    const configuredRelays = store.getState().relays.relays;
+    
+    // Only track status for configured relays
+    if (configuredRelays.includes(normalizedUrl)) {
+      store.dispatch(updateRelayStatus({ url: normalizedUrl, connected: true }));
+    }
   });
 
   ndkInstance.pool.on('relay:disconnect', (relay) => {
-    store.dispatch(updateRelayStatus({ url: relay.url, connected: false }));
+    const normalizedUrl = relay.url.replace(/\/$/, ''); // Remove trailing slash
+    const configuredRelays = store.getState().relays.relays;
+    
+    // Only track status for configured relays
+    if (configuredRelays.includes(normalizedUrl)) {
+      store.dispatch(updateRelayStatus({ url: normalizedUrl, connected: false }));
+    }
   });
 
   await ndkInstance.connect();
