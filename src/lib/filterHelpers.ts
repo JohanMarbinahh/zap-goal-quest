@@ -31,14 +31,6 @@ export const sortGoals = (goals: EnrichedGoal[], sortType: SortType): EnrichedGo
       return sorted.sort((a, b) => b.raised - a.raised);
     case 'lowest':
       return sorted.sort((a, b) => a.raised - b.raised);
-    case 'almost-funded':
-      return sorted.sort((a, b) => {
-        const aRemaining = b.targetSats - b.raised;
-        const bRemaining = a.targetSats - a.raised;
-        return aRemaining - bRemaining;
-      });
-    case 'most-zaps':
-      return sorted.sort((a, b) => b.zaps.length - a.zaps.length);
     default:
       return sorted;
   }
