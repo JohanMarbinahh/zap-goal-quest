@@ -23,9 +23,7 @@ import { NDKFilter, NDKSubscription } from '@nostr-dev-kit/ndk';
 
 const GOALS_PER_PAGE = 30;
 const MAX_PAGES = 5;
-const MIN_GOALS_TO_SHOW = 30; // Show page as soon as we have first page worth of goals
-const MIN_LOADING_TIME = 1000; // Minimum 1 second loading
-const MAX_LOADING_TIME = 5000; // Maximum 5 seconds loading
+const MIN_LOADING_TIME = 1000; // Minimum 1 second loading for smooth UX
 
 const Index = () => {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -46,9 +44,6 @@ const Index = () => {
   const [initialLoading, setInitialLoading] = useState(allGoals.length === 0);
   const [goalsLoadedCount, setGoalsLoadedCount] = useState(0);
   const [loadStartTime] = useState(Date.now());
-  
-  // Snapshot goals when loading completes to freeze the UI
-  const [displayGoals, setDisplayGoals] = useState(allGoals);
 
   // Update goals loaded count during loading only
   useEffect(() => {
@@ -58,10 +53,8 @@ const Index = () => {
   }, [allGoals.length, initialLoading]);
   
   // Memoize filtering, sorting, and pagination calculations
-  // After loading, use allGoals for pagination but displayGoals for the count (to keep it stable)
   const { totalPages, goals, totalGoalsCount, filteredGoalsCount } = useMemo(() => {
-    const goalsToUse = initialLoading ? displayGoals : allGoals;
-    const filtered = filterGoals(goalsToUse, filter, followingList);
+    const filtered = filterGoals(allGoals, filter, followingList);
     const sorted = sortGoals(filtered, sort, sortDirection);
     
     const pages = Math.min(Math.ceil(sorted.length / GOALS_PER_PAGE), MAX_PAGES);
@@ -72,10 +65,10 @@ const Index = () => {
     return { 
       totalPages: pages, 
       goals: pageGoals,
-      totalGoalsCount: displayGoals.length, // Keep count stable at initial load number
+      totalGoalsCount: allGoals.length,
       filteredGoalsCount: sorted.length
     };
-  }, [allGoals, displayGoals, initialLoading, currentPage, filter, sort, sortDirection, followingList]);
+  }, [allGoals, currentPage, filter, sort, sortDirection, followingList]);
   
   const handlePageChange = useCallback((page: number) => {
     if (page === currentPage || page < 1 || page > totalPages) return;
@@ -104,7 +97,6 @@ const Index = () => {
     let contactSub: NDKSubscription | null = null;
     let reactionSub: NDKSubscription | null = null;
     let updateSub: NDKSubscription | null = null;
-    let loadingTimeout: NodeJS.Timeout | null = null;
     let hasSubscribed = false;
     
     const subscribeToEvents = async () => {
@@ -118,19 +110,11 @@ const Index = () => {
       // Skip if we already have goals loaded
       if (allGoals.length > 0) {
         console.log('Goals already loaded, skipping subscription');
-        setDisplayGoals(allGoals);
         setInitialLoading(false);
         return;
       }
       
       try {
-        // Set a timeout to stop loading after max time
-        loadingTimeout = setTimeout(() => {
-          console.log('⏱️ Max loading time reached - showing content');
-          // Snapshot current goals to freeze the UI
-          setDisplayGoals(selectEnrichedGoals(store.getState()));
-          setInitialLoading(false);
-        }, MAX_LOADING_TIME);
 
         // Wait for NDK to be initialized
         let ndk;
@@ -149,7 +133,6 @@ const Index = () => {
 
         if (!ndk) {
           console.error('NDK failed to initialize');
-          setDisplayGoals([]);
           setInitialLoading(false);
           return;
         }
@@ -167,18 +150,6 @@ const Index = () => {
             Object.entries(mockProfiles).forEach(([pubkey, profile]) => {
               dispatch(setProfile({ pubkey, profile }));
             });
-            
-            // Check if we've reached the minimum number of goals to show
-            const currentCount = Object.keys(store.getState().goals.goals).length;
-            const elapsedTime = Date.now() - loadStartTime;
-            
-            if (currentCount >= MIN_GOALS_TO_SHOW && elapsedTime >= MIN_LOADING_TIME) {
-              console.log(`✅ ${currentCount} goals loaded - showing page!`);
-              if (loadingTimeout) clearTimeout(loadingTimeout);
-              // Snapshot current goals to freeze the UI
-              setDisplayGoals(selectEnrichedGoals(store.getState()));
-              setInitialLoading(false);
-            }
           }
         });
 
@@ -188,27 +159,15 @@ const Index = () => {
           
           console.log(`📋 Goal subscription complete - ${finalCount} total goals loaded in ${elapsedTime}ms`);
           
-          // Stop the goal subscription to prevent further updates
-          if (goalSub) {
-            goalSub.stop();
-            console.log('🛑 Stopped goal subscription after EOSE');
-          }
-          
           // Ensure minimum loading time has passed
           const remainingTime = Math.max(0, MIN_LOADING_TIME - elapsedTime);
           
           if (remainingTime > 0) {
             console.log(`⏳ Waiting ${remainingTime}ms to meet minimum loading time`);
             setTimeout(() => {
-              if (loadingTimeout) clearTimeout(loadingTimeout);
-              // Snapshot current goals to freeze the counter
-              setDisplayGoals(selectEnrichedGoals(store.getState()));
               setInitialLoading(false);
             }, remainingTime);
           } else {
-            if (loadingTimeout) clearTimeout(loadingTimeout);
-            // Snapshot current goals to freeze the counter
-            setDisplayGoals(selectEnrichedGoals(store.getState()));
             setInitialLoading(false);
           }
           
@@ -352,7 +311,6 @@ const Index = () => {
         updateSub.stop();
         console.log('Stopped update subscription');
       }
-      if (loadingTimeout) clearTimeout(loadingTimeout);
     };
   }, []); // Only run once on mount
 
@@ -376,7 +334,7 @@ const Index = () => {
 
         {initialLoading ? (
           <RelayLoadingStatus goalsLoaded={goalsLoadedCount} />
-        ) : displayGoals.length === 0 ? (
+        ) : allGoals.length === 0 ? (
           <div className="text-center py-20">
             <div className="inline-flex p-6 rounded-full bg-primary/10 mb-4">
               <Plus className="w-12 h-12 text-primary" />
