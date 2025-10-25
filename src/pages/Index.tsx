@@ -2,9 +2,9 @@ import { useEffect, useState, useMemo, useCallback } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { Plus, ChevronLeft, ChevronRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Spinner } from '@/components/ui/spinner';
 import { GoalCard } from '@/components/GoalCard';
 import { CreateGoalDialog } from '@/components/CreateGoalDialog';
+import { RelayLoadingStatus } from '@/components/RelayLoadingStatus';
 import { GoalsFilter, FilterType, SortType, SortDirection } from '@/components/GoalsFilter';
 import { useAppDispatch, useAppSelector } from '@/stores/hooks';
 import { store } from '@/stores/store';
@@ -23,6 +23,8 @@ import { NDKFilter, NDKSubscription } from '@nostr-dev-kit/ndk';
 
 const GOALS_PER_PAGE = 30;
 const MAX_PAGES = 5;
+const MIN_GOALS_TO_SHOW = 30; // Show page as soon as we have this many goals
+const LOADING_TIMEOUT = 5000; // 5 seconds max loading time
 
 const Index = () => {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -41,6 +43,18 @@ const Index = () => {
   
   // Initialize loading state based on whether we already have goals
   const [initialLoading, setInitialLoading] = useState(allGoals.length === 0);
+  const [goalsLoadedCount, setGoalsLoadedCount] = useState(allGoals.length);
+
+  // Update goals loaded count whenever allGoals changes
+  useEffect(() => {
+    setGoalsLoadedCount(allGoals.length);
+    
+    // Auto-hide loading spinner once we have enough goals
+    if (initialLoading && allGoals.length >= MIN_GOALS_TO_SHOW) {
+      console.log(`✅ ${allGoals.length} goals loaded, showing content early!`);
+      setInitialLoading(false);
+    }
+  }, [allGoals.length, initialLoading]);
   
   // Memoize filtering, sorting, and pagination calculations
   const { totalPages, goals, totalGoalsCount, filteredGoalsCount } = useMemo(() => {
@@ -106,11 +120,11 @@ const Index = () => {
       }
       
       try {
-        // Set a timeout to stop loading after 10 seconds regardless
+        // Set a timeout to stop loading after 5 seconds regardless
         loadingTimeout = setTimeout(() => {
-          console.log('Loading timeout - stopping spinner');
+          console.log('⏱️ Loading timeout - stopping spinner');
           setInitialLoading(false);
-        }, 10000);
+        }, LOADING_TIMEOUT);
 
         // Wait for NDK to be initialized
         let ndk;
@@ -140,18 +154,29 @@ const Index = () => {
         goalSub.on('event', (event) => {
           const goal = parseGoal9041(event);
           if (goal) {
-            console.log('💰 Goal loaded - Event ID:', goal.eventId, 'Title:', goal.title);
+            const currentCount = store.getState().goals.goals;
+            const newCount = Object.keys(currentCount).length + 1;
+            console.log(`💰 Goal ${newCount} loaded:`, goal.title.substring(0, 30));
+            
             dispatch(setGoal({ goalId: goal.goalId, goal }));
             // Add mock reactions and profiles for demo purposes
             dispatch(addMockReactions(goal.eventId));
             Object.entries(mockProfiles).forEach(([pubkey, profile]) => {
               dispatch(setProfile({ pubkey, profile }));
             });
+            
+            // Check if we've reached minimum goals to show content
+            if (initialLoading && newCount >= MIN_GOALS_TO_SHOW) {
+              console.log(`✅ Reached ${MIN_GOALS_TO_SHOW} goals, showing content!`);
+              if (loadingTimeout) clearTimeout(loadingTimeout);
+              setInitialLoading(false);
+            }
           }
         });
 
         goalSub.on('eose', () => {
-          console.log('Goal subscription eose received');
+          const finalCount = Object.keys(store.getState().goals.goals).length;
+          console.log(`📋 Goal subscription complete - ${finalCount} total goals loaded`);
           if (loadingTimeout) clearTimeout(loadingTimeout);
           setInitialLoading(false);
           
@@ -318,10 +343,7 @@ const Index = () => {
         </div>
 
         {initialLoading ? (
-          <div className="flex flex-col items-center justify-center py-20 gap-4">
-            <Spinner size="lg" />
-            <p className="text-muted-foreground">Loading goals...</p>
-          </div>
+          <RelayLoadingStatus goalsLoaded={goalsLoadedCount} targetGoals={MIN_GOALS_TO_SHOW} />
         ) : totalGoalsCount === 0 ? (
           <div className="text-center py-20">
             <div className="inline-flex p-6 rounded-full bg-primary/10 mb-4">
