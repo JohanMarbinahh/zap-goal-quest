@@ -178,6 +178,24 @@ export function parseReaction7(event: NDKEvent): Reaction7 | null {
   }
 }
 
+export function parseGoalUpdate(event: NDKEvent): { eventId: string; goalEventId: string; authorPubkey: string; content: string; createdAt: number } | null {
+  try {
+    const goalEventTag = event.tags.find(tag => tag[0] === 'e');
+    if (!goalEventTag) return null;
+
+    return {
+      eventId: event.id,
+      goalEventId: goalEventTag[1],
+      authorPubkey: event.pubkey,
+      content: event.content,
+      createdAt: event.created_at || Math.floor(Date.now() / 1000),
+    };
+  } catch (error) {
+    console.error('Failed to parse goal update:', error);
+    return null;
+  }
+}
+
 export function formatSats(sats: number): string {
   if (sats >= 1000000) {
     return `${(sats / 1000000).toFixed(2)}M`;

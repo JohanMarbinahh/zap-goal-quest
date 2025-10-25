@@ -12,10 +12,12 @@ import { setGoal } from '@/stores/goalsSlice';
 import { setProfile } from '@/stores/profilesSlice';
 import { addZap } from '@/stores/zapsSlice';
 import { setFollowing } from '@/stores/contactsSlice';
+import { addReaction } from '@/stores/reactionsSlice';
+import { addUpdate } from '@/stores/updatesSlice';
 import { selectEnrichedGoals } from '@/stores/selectors';
 import { Goal9041 } from '@/types/nostr';
 import { getNDK } from '@/lib/ndk';
-import { parseGoal9041, parseProfile, parseZap9735 } from '@/lib/nostrHelpers';
+import { parseGoal9041, parseProfile, parseZap9735, parseReaction7, parseGoalUpdate } from '@/lib/nostrHelpers';
 import { filterGoals, sortGoals } from '@/lib/filterHelpers';
 import { NDKFilter, NDKSubscription } from '@nostr-dev-kit/ndk';
 
@@ -89,6 +91,8 @@ const Index = () => {
     let profileSub: NDKSubscription | null = null;
     let zapSub: NDKSubscription | null = null;
     let contactSub: NDKSubscription | null = null;
+    let reactionSub: NDKSubscription | null = null;
+    let updateSub: NDKSubscription | null = null;
     let loadingTimeout: NodeJS.Timeout | null = null;
     
     const subscribeToEvents = async () => {
@@ -176,6 +180,45 @@ const Index = () => {
               console.warn('⚠️ Zaps exist but NONE match our goal event IDs');
             }
           });
+
+          // Subscribe to kind 7 (reactions) for loaded goals
+          if (goalEventIds.length > 0) {
+            const reactionFilter: NDKFilter = { 
+              kinds: [7 as any],
+              '#e': goalEventIds,
+              limit: 1000
+            };
+            reactionSub = ndk.subscribe(reactionFilter, { closeOnEose: false });
+            
+            reactionSub.on('event', (event) => {
+              const reaction = parseReaction7(event);
+              if (reaction) {
+                console.log('👍 Reaction loaded:', reaction.content, 'on', reaction.targetEventId.substring(0, 8));
+                dispatch(addReaction(reaction));
+              }
+            });
+          }
+
+          // Subscribe to kind 1 (updates) from goal authors
+          const goalAuthors = [...new Set(Object.values(currentGoals).map((g: Goal9041) => g.authorPubkey))];
+          
+          if (goalAuthors.length > 0 && goalEventIds.length > 0) {
+            const updateFilter: NDKFilter = {
+              kinds: [1],
+              authors: goalAuthors,
+              '#e': goalEventIds,
+              limit: 500
+            };
+            updateSub = ndk.subscribe(updateFilter, { closeOnEose: false });
+            
+            updateSub.on('event', (event) => {
+              const update = parseGoalUpdate(event);
+              if (update) {
+                console.log('📝 Update loaded from', update.authorPubkey.substring(0, 8));
+                dispatch(addUpdate(update));
+              }
+            });
+          }
         });
 
         // Subscribe to kind 0 (profiles)
@@ -217,6 +260,8 @@ const Index = () => {
       if (profileSub) profileSub.stop();
       if (zapSub) zapSub.stop();
       if (contactSub) contactSub.stop();
+      if (reactionSub) reactionSub.stop();
+      if (updateSub) updateSub.stop();
       if (loadingTimeout) clearTimeout(loadingTimeout);
     };
   }, [dispatch, userPubkey]); // Only run once on mount, skip if data already exists

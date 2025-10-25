@@ -1,6 +1,9 @@
 import { useParams, useNavigate } from 'react-router-dom';
 import { useState } from 'react';
-import { ArrowLeft, Zap, ThumbsUp, Calendar, Target, Hash, Info, Copy, Check } from 'lucide-react';
+import { ArrowLeft, Zap, Calendar, Target, Hash, Info, Copy, Check } from 'lucide-react';
+import { GoalReactions } from '@/components/GoalReactions';
+import { GoalUpdates } from '@/components/GoalUpdates';
+import { CreateUpdateDialog } from '@/components/CreateUpdateDialog';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
@@ -19,6 +22,9 @@ const GoalDetail = () => {
   const navigate = useNavigate();
   const [excludeSelfZaps, setExcludeSelfZaps] = useState(true);
   const [copiedPubkey, setCopiedPubkey] = useState(false);
+  const [isUpdateDialogOpen, setIsUpdateDialogOpen] = useState(false);
+  
+  const userPubkey = useAppSelector((state) => state.auth.pubkey);
   
   const goal = useAppSelector((state) => id ? state.goals.goals[id] : undefined);
   const profile = useAppSelector((state) => 
@@ -268,8 +274,68 @@ const GoalDetail = () => {
         </div>
 
         <div className="grid md:grid-cols-3 gap-6">
-          {/* Zaps Feed */}
+          {/* Left Column: Reactions & Updates */}
           <div className="md:col-span-2 space-y-6">
+            <GoalReactions goalEventId={goal.eventId} goalAuthorPubkey={goal.authorPubkey} />
+            <GoalUpdates 
+              goalEventId={goal.eventId} 
+              onCreateUpdate={() => setIsUpdateDialogOpen(true)}
+              isGoalAuthor={userPubkey === goal.authorPubkey}
+            />
+          </div>
+
+          {/* Right Column: Top Supporters & Zaps */}
+          <div className="space-y-6">
+            <Card>
+              <CardHeader>
+                <CardTitle>Top Supporters</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-3">
+                  {topSupporters.slice(0, 10).map((supporter, index) => {
+                    const supporterProfile = useAppSelector((state) => 
+                      state.profiles.profiles[supporter.pubkey]
+                    );
+                    return (
+                      <div
+                        key={supporter.pubkey}
+                        className="flex items-center gap-3 p-2 rounded-lg hover:bg-secondary/50 transition-colors"
+                      >
+                        <div className="flex items-center justify-center w-6 h-6 rounded-full bg-primary/10 text-xs font-bold text-primary">
+                          {index + 1}
+                        </div>
+                        <Avatar className="w-8 h-8">
+                          <AvatarImage src={supporterProfile?.picture} />
+                          <AvatarFallback className="bg-primary/10 text-primary text-xs">
+                            {supporterProfile?.name?.[0]?.toUpperCase() || 'S'}
+                          </AvatarFallback>
+                        </Avatar>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-semibold truncate">
+                            {supporterProfile?.displayName ||
+                              supporterProfile?.name ||
+                              shortNpub(supporter.pubkey)}
+                          </p>
+                          <p className="text-xs text-muted-foreground">
+                            {supporter.count} zap{supporter.count !== 1 ? 's' : ''}
+                          </p>
+                        </div>
+                        <div className="text-sm font-bold text-accent">
+                          {formatSats(supporter.total)}
+                        </div>
+                      </div>
+                    );
+                  })}
+                  {topSupporters.length === 0 && (
+                    <div className="text-center py-8 text-sm text-muted-foreground">
+                      No supporters yet
+                    </div>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Zaps Feed */}
             <Card>
               <CardHeader>
                 <div className="flex items-center justify-between">
@@ -327,9 +393,6 @@ const GoalDetail = () => {
                               )}
                             </div>
                           </div>
-                          <Button size="sm" variant="ghost" className="shrink-0">
-                            <ThumbsUp className="w-4 h-4" />
-                          </Button>
                         </div>
                       );
                     })}
@@ -342,60 +405,15 @@ const GoalDetail = () => {
               </CardContent>
             </Card>
           </div>
-
-          {/* Top Supporters */}
-          <div>
-            <Card>
-              <CardHeader>
-                <CardTitle>Top Supporters</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-3">
-                  {topSupporters.slice(0, 10).map((supporter, index) => {
-                    const supporterProfile = useAppSelector((state) => 
-                      state.profiles.profiles[supporter.pubkey]
-                    );
-                    return (
-                      <div
-                        key={supporter.pubkey}
-                        className="flex items-center gap-3 p-2 rounded-lg hover:bg-secondary/50 transition-colors"
-                      >
-                        <div className="flex items-center justify-center w-6 h-6 rounded-full bg-primary/10 text-xs font-bold text-primary">
-                          {index + 1}
-                        </div>
-                        <Avatar className="w-8 h-8">
-                          <AvatarImage src={supporterProfile?.picture} />
-                          <AvatarFallback className="bg-primary/10 text-primary text-xs">
-                            {supporterProfile?.name?.[0]?.toUpperCase() || 'S'}
-                          </AvatarFallback>
-                        </Avatar>
-                        <div className="flex-1 min-w-0">
-                          <p className="text-sm font-semibold truncate">
-                            {supporterProfile?.displayName ||
-                              supporterProfile?.name ||
-                              shortNpub(supporter.pubkey)}
-                          </p>
-                          <p className="text-xs text-muted-foreground">
-                            {supporter.count} zap{supporter.count !== 1 ? 's' : ''}
-                          </p>
-                        </div>
-                        <div className="text-sm font-bold text-accent">
-                          {formatSats(supporter.total)}
-                        </div>
-                      </div>
-                    );
-                  })}
-                  {topSupporters.length === 0 && (
-                    <div className="text-center py-8 text-sm text-muted-foreground">
-                      No supporters yet
-                    </div>
-                  )}
-                </div>
-              </CardContent>
-            </Card>
-          </div>
         </div>
       </div>
+      
+      <CreateUpdateDialog 
+        open={isUpdateDialogOpen}
+        onOpenChange={setIsUpdateDialogOpen}
+        goalEventId={goal.eventId}
+        goalAuthorPubkey={goal.authorPubkey}
+      />
     </main>
   );
 };
