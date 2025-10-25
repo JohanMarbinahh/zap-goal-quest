@@ -15,15 +15,17 @@ export async function initNDK() {
     explicitRelayUrls: relays,
   });
 
-  // Track relay connections
+  // Track relay connections - normalize URLs by removing trailing slashes
   ndkInstance.pool.on('relay:connect', (relay) => {
-    console.log('🟢 Connected:', relay.url);
-    store.dispatch(updateRelayStatus({ url: relay.url, connected: true }));
+    const normalizedUrl = relay.url.replace(/\/$/, '');
+    console.log('🟢 Connected:', normalizedUrl);
+    store.dispatch(updateRelayStatus({ url: normalizedUrl, connected: true }));
   });
 
   ndkInstance.pool.on('relay:disconnect', (relay) => {
-    console.log('🔴 Disconnected:', relay.url);
-    store.dispatch(updateRelayStatus({ url: relay.url, connected: false }));
+    const normalizedUrl = relay.url.replace(/\/$/, '');
+    console.log('🔴 Disconnected:', normalizedUrl);
+    store.dispatch(updateRelayStatus({ url: normalizedUrl, connected: false }));
   });
 
   await ndkInstance.connect();
