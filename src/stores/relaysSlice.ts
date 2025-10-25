@@ -37,14 +37,26 @@ const relaysSlice = createSlice({
     },
     removeRelay: (state, action: PayloadAction<string>) => {
       state.relays = state.relays.filter((r) => r !== action.payload);
+      // Also remove its status
+      state.relayStatuses = state.relayStatuses.filter((r) => r.url !== action.payload);
     },
     updateRelayStatus: (state, action: PayloadAction<{ url: string; connected: boolean }>) => {
+      // Only track status for configured relays
+      if (!state.relays.includes(action.payload.url)) {
+        return;
+      }
+      
       const existing = state.relayStatuses.find((r) => r.url === action.payload.url);
       if (existing) {
         existing.connected = action.payload.connected;
       } else {
         state.relayStatuses.push({ url: action.payload.url, connected: action.payload.connected });
       }
+      
+      // Clean up statuses for relays no longer configured
+      state.relayStatuses = state.relayStatuses.filter((status) => 
+        state.relays.includes(status.url)
+      );
     },
     mergeDefaultRelays: (state) => {
       // Add any default relays that aren't already in the list

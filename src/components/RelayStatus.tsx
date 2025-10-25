@@ -11,7 +11,11 @@ export const RelayStatus = () => {
   const relayStatuses = useAppSelector((state) => state.relays.relayStatuses);
   const configuredRelays = useAppSelector((state) => state.relays.relays);
 
-  const connectedCount = relayStatuses.filter((r) => r.connected).length;
+  // Only count statuses for configured relays
+  const connectedCount = configuredRelays.filter((relayUrl) => {
+    const status = relayStatuses.find((r) => r.url === relayUrl);
+    return status?.connected || false;
+  }).length;
   const totalCount = configuredRelays.length;
   const isConnected = connectedCount > 0;
 
