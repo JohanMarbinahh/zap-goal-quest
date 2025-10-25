@@ -9,48 +9,26 @@ let ndkInstance: NDK | null = null;
 export async function initNDK() {
   const relays = store.getState().relays.relays;
   
-  console.log('📡 Starting NDK initialization...');
-  console.log('📋 Configured relays array:', relays);
-  console.log('📋 Number of relays:', relays.length);
-  console.log('📋 First relay example:', relays[0]);
+  console.log('🚀 Initializing NDK with relays:', relays);
 
   ndkInstance = new NDK({
     explicitRelayUrls: relays,
   });
 
-  // Initialize all relay statuses as disconnected
-  console.log('📡 Initializing relay statuses for:', relays.length, 'relays');
-  relays.forEach(relayUrl => {
-    console.log('  → Setting', relayUrl, 'to disconnected');
-    store.dispatch(updateRelayStatus({ url: relayUrl, connected: false }));
-  });
-
-  // Set up relay status tracking - only for configured relays
+  // Track relay connections
   ndkInstance.pool.on('relay:connect', (relay) => {
-    const relaysNow = store.getState().relays.relays;
-    const isConfigured = relaysNow.includes(relay.url);
-    console.log('🟢 Relay connected:', relay.url);
-    console.log('   Is configured:', isConfigured, '| Configured count:', relaysNow.length);
+    console.log('🟢 Connected:', relay.url);
     store.dispatch(updateRelayStatus({ url: relay.url, connected: true }));
   });
 
   ndkInstance.pool.on('relay:disconnect', (relay) => {
-    console.log('🔴 Relay disconnected:', relay.url);
+    console.log('🔴 Disconnected:', relay.url);
     store.dispatch(updateRelayStatus({ url: relay.url, connected: false }));
   });
 
   await ndkInstance.connect();
-
-  // Manually update status for any relays that connected before event listeners were ready
-  setTimeout(() => {
-    ndkInstance.pool.relays.forEach((relay) => {
-      store.dispatch(updateRelayStatus({ 
-        url: relay.url, 
-        connected: relay.status === 1 // 1 = connected in NDK
-      }));
-    });
-  }, 500);
-
+  
+  console.log('✅ NDK connected');
   return ndkInstance;
 }
 

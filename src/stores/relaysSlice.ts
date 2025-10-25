@@ -43,19 +43,10 @@ const relaysSlice = createSlice({
       state.relayStatuses = state.relayStatuses.filter((r) => r.url !== action.payload);
     },
     updateRelayStatus: (state, action: PayloadAction<{ url: string; connected: boolean }>) => {
-      // Only track status for configured relays
-      if (!state.relays.includes(action.payload.url)) {
-        console.log('⚠️ Ignoring status for non-configured relay:', action.payload.url);
-        console.log('📋 Configured relays:', state.relays);
-        return;
-      }
-      
       const existing = state.relayStatuses.find((r) => r.url === action.payload.url);
       if (existing) {
-        console.log('✅ Updated relay status:', action.payload.url, '→', action.payload.connected);
         existing.connected = action.payload.connected;
       } else {
-        console.log('➕ Added new relay status:', action.payload.url, '→', action.payload.connected);
         state.relayStatuses.push({ url: action.payload.url, connected: action.payload.connected });
       }
     },
