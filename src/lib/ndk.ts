@@ -56,10 +56,14 @@ export async function setupAuth() {
     try {
       const signer = new NDKPrivateKeySigner(authState.privateKey);
       ndk.signer = signer;
-      console.log('✅ Restored signer for pubkey:', authState.pubkey.slice(0, 8));
+      
+      // Verify the signer works by getting the user
+      const user = await signer.user();
+      console.log('✅ Restored signer for pubkey:', user.pubkey.slice(0, 8));
+      
       return { pubkey: authState.pubkey, npub: authState.npub };
     } catch (error) {
-      console.error('Failed to restore signer:', error);
+      console.error('❌ Failed to restore signer:', error);
       // Clear invalid auth state
       store.dispatch(setPubkey({ pubkey: '', npub: '', privateKey: '' }));
     }
