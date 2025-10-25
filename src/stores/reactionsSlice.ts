@@ -47,6 +47,7 @@ export const mockProfiles: Record<string, Profile> = {
 
 // Mock reaction data generator
 const generateMockReactions = (goalId: string): Reaction7[] => {
+  const emojis = ['❤️', '🔥', '+', '👍', '🎉', '🚀', '💯', '⚡', '🌟', '💪'];
   const mockPubkeys = [
     'npub1mock1user1111111111111111111111111111111111111111111111',
     'npub1mock2user2222222222222222222222222222222222222222222222',
@@ -58,28 +59,19 @@ const generateMockReactions = (goalId: string): Reaction7[] => {
   const reactions: Reaction7[] = [];
   const now = Math.floor(Date.now() / 1000);
   
-  // Generate mostly likes (+) and some dislikes (-)
-  // 15 likes
-  for (let i = 0; i < 15; i++) {
-    reactions.push({
-      eventId: `${goalId}-reaction-like-${i}`,
-      authorPubkey: mockPubkeys[i % mockPubkeys.length],
-      content: '+',
-      createdAt: now - (i * 300),
-      targetEventId: goalId,
-    });
-  }
-  
-  // 3 dislikes
-  for (let i = 0; i < 3; i++) {
-    reactions.push({
-      eventId: `${goalId}-reaction-dislike-${i}`,
-      authorPubkey: mockPubkeys[i % mockPubkeys.length],
-      content: '-',
-      createdAt: now - (i * 400),
-      targetEventId: goalId,
-    });
-  }
+  // Generate reactions with varying counts
+  emojis.forEach((emoji, index) => {
+    const count = emoji === '❤️' ? 10 : emoji === '🔥' ? 8 : emoji === '+' ? 12 : emoji === '-' ? 3 : Math.floor(Math.random() * 5) + 1;
+    for (let i = 0; i < count; i++) {
+      reactions.push({
+        eventId: `${goalId}-reaction-${emoji}-${i}`,
+        authorPubkey: mockPubkeys[i % mockPubkeys.length],
+        content: emoji,
+        createdAt: now - (index * 3600) - (i * 300),
+        targetEventId: goalId,
+      });
+    }
+  });
   
   return reactions;
 };
