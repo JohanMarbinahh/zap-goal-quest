@@ -114,18 +114,6 @@ export const GoalReactions = ({ goalEventId, goalAuthorPubkey }: GoalReactionsPr
             {reactionCounts['-'] || 0}
           </Button>
         </div>
-        
-        {/* Positive/Negative summary */}
-        <div className="flex gap-2">
-          <Badge variant="default" className="gap-1.5">
-            <ThumbsUp className="w-3 h-3" />
-            {positiveReactions.length} Positive
-          </Badge>
-          <Badge variant="secondary" className="gap-1.5">
-            <ThumbsDown className="w-3 h-3" />
-            {negativeReactions.length} Negative
-          </Badge>
-        </div>
       </CardHeader>
       
       <CardContent className="space-y-4">
@@ -145,47 +133,11 @@ export const GoalReactions = ({ goalEventId, goalAuthorPubkey }: GoalReactionsPr
           </div>
         )}
         
-        {/* Individual reactions feed */}
-        <div className="space-y-2 max-h-[400px] overflow-y-auto">
-          {[...reactions]
-            .sort((a, b) => b.createdAt - a.createdAt)
-            .map((reaction) => {
-              const reactorProfile = useAppSelector((state) => 
-                state.profiles.profiles[reaction.reactorPubkey]
-              );
-              return (
-                <div
-                  key={reaction.eventId}
-                  className="flex items-center gap-3 p-2.5 rounded-lg bg-secondary/30 hover:bg-secondary/50 transition-colors"
-                >
-                  <Avatar className="w-7 h-7">
-                    <AvatarImage src={reactorProfile?.picture} />
-                    <AvatarFallback className="bg-primary/10 text-primary text-xs">
-                      {reactorProfile?.name?.[0]?.toUpperCase() || 'R'}
-                    </AvatarFallback>
-                  </Avatar>
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2">
-                      <span className="font-medium text-sm truncate">
-                        {reactorProfile?.displayName ||
-                          reactorProfile?.name ||
-                          shortNpub(reaction.reactorPubkey)}
-                      </span>
-                      <span className="text-xl">{reaction.content}</span>
-                    </div>
-                    <span className="text-xs text-muted-foreground">
-                      {formatRelativeTime(reaction.createdAt)}
-                    </span>
-                  </div>
-                </div>
-              );
-            })}
-          {reactions.length === 0 && (
-            <div className="text-center py-8 text-muted-foreground">
-              No reactions yet. Be the first to react!
-            </div>
-          )}
-        </div>
+        {reactions.length === 0 && (
+          <div className="text-center py-8 text-muted-foreground">
+            No reactions yet. Be the first to react!
+          </div>
+        )}
       </CardContent>
     </Card>
   );
