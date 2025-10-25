@@ -2,7 +2,7 @@ import { memo } from 'react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Filter, ArrowUpDown, ArrowUp, ArrowDown } from 'lucide-react';
+import { Filter, ArrowUp, ArrowDown } from 'lucide-react';
 
 export type FilterType = 'all' | 'completed' | 'active' | 'following';
 export type SortType = 'date' | 'contributed' | 'progress' | 'zaps' | 'target';

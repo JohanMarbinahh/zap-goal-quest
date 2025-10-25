@@ -11,10 +11,11 @@ import { selectEnrichedGoals, EnrichedGoal } from '@/stores/selectors';
 import { Goal9041 } from '@/types/nostr';
 import { getNDK } from '@/lib/ndk';
 import { parseGoal9041, parseProfile, parseZap9735, parseReaction7, parseGoalUpdate } from '@/lib/nostrHelpers';
-import { NDKFilter, NDKSubscription } from '@nostr-dev-kit/ndk';
+import type { NDKFilter, NDKSubscription, NDKEvent } from '@nostr-dev-kit/ndk';
 
 const MIN_LOADING_TIME = 1000;
 const MAX_GOALS_TO_LOAD = 100;
+const IS_DEV = import.meta.env.DEV;
 
 interface UseGoalsSubscriptionResult {
   initialLoading: boolean;
@@ -63,13 +64,13 @@ export const useGoalsSubscription = (
 
     const subscribeToEvents = async () => {
       if (hasSubscribed.current) {
-        console.log('Already subscribed, skipping...');
+        if (IS_DEV) console.log('Already subscribed, skipping...');
         return;
       }
       hasSubscribed.current = true;
 
       if (existingGoals.length > 0) {
-        console.log('Goals already loaded, skipping subscription');
+        if (IS_DEV) console.log('Goals already loaded, skipping subscription');
         setInitialLoading(false);
         return;
       }
@@ -108,12 +109,12 @@ export const useGoalsSubscription = (
       return null;
     };
 
-    const subscribeToGoals = async (ndk: any) => {
+    const subscribeToGoals = async (ndk: any): Promise<NDKSubscription> => {
       const goalFilter: NDKFilter = { kinds: [9041 as any] };
       const sub = ndk.subscribe(goalFilter, { closeOnEose: false });
       let loadingScreenShown = false;
 
-      sub.on('event', (event: any) => {
+      sub.on('event', (event: NDKEvent) => {
         const goal = parseGoal9041(event);
         if (goal) {
           dispatch(setGoal({ goalId: goal.goalId, goal }));
@@ -126,7 +127,7 @@ export const useGoalsSubscription = (
           const elapsedTime = Date.now() - loadStartTime.current;
 
           if (!loadingScreenShown && currentCount >= MAX_GOALS_TO_LOAD && elapsedTime >= MIN_LOADING_TIME) {
-            console.log(`✅ Reached ${currentCount} goals - showing page! Continuing to load in background...`);
+            if (IS_DEV) console.log(`✅ Reached ${currentCount} goals - showing page!`);
             loadingScreenShown = true;
 
             Object.entries(mockProfiles).forEach(([pubkey, profile]) => {
@@ -145,7 +146,7 @@ export const useGoalsSubscription = (
         const finalCount = Object.keys(store.getState().goals.goals).length;
         const elapsedTime = Date.now() - loadStartTime.current;
 
-        console.log(`📋 Goal subscription complete - ${finalCount} total goals loaded in ${elapsedTime}ms`);
+        if (IS_DEV) console.log(`📋 ${finalCount} goals loaded in ${elapsedTime}ms`);
 
         setBackgroundLoading(false);
         setDisplayedTotalCount(finalCount);
@@ -176,11 +177,11 @@ export const useGoalsSubscription = (
       return sub;
     };
 
-    const subscribeToRelatedData = (ndk: any) => {
+    const subscribeToRelatedData = (ndk: any): void => {
       const currentGoals = store.getState().goals.goals;
       const goalEventIds = Object.values(currentGoals).map((g: Goal9041) => g.eventId);
 
-      console.log(`🔍 Testing zap availability for ${goalEventIds.length} goals`);
+      if (IS_DEV) console.log(`🔍 Subscribing to data for ${goalEventIds.length} goals`);
 
       const allZapsFilter: NDKFilter = {
         kinds: [9735 as any],
@@ -192,7 +193,7 @@ export const useGoalsSubscription = (
       let matchingZapCount = 0;
       const goalIdSet = new Set(goalEventIds);
 
-      testZapSub.on('event', (event: any) => {
+      testZapSub.on('event', (event: NDKEvent) => {
         zapCount++;
         const zap = parseZap9735(event);
         if (zap && zap.targetEventId && goalIdSet.has(zap.targetEventId)) {
@@ -202,7 +203,7 @@ export const useGoalsSubscription = (
       });
 
       testZapSub.on('eose', () => {
-        console.log(`📊 Zap scan: ${zapCount} total zaps found, ${matchingZapCount} match our goals`);
+        if (IS_DEV) console.log(`📊 ${zapCount} zaps found, ${matchingZapCount} matched`);
       });
 
       if (goalEventIds.length > 0) {
@@ -213,7 +214,7 @@ export const useGoalsSubscription = (
         };
         reactionSub = ndk.subscribe(reactionFilter, { closeOnEose: false });
 
-        reactionSub.on('event', (event: any) => {
+        reactionSub.on('event', (event: NDKEvent) => {
           const reaction = parseReaction7(event);
           if (reaction) {
             dispatch(addReaction(reaction));
@@ -232,7 +233,7 @@ export const useGoalsSubscription = (
         };
         updateSub = ndk.subscribe(updateFilter, { closeOnEose: false });
 
-        updateSub.on('event', (event: any) => {
+        updateSub.on('event', (event: NDKEvent) => {
           const update = parseGoalUpdate(event);
           if (update) {
             dispatch(addUpdate(update));
@@ -241,11 +242,11 @@ export const useGoalsSubscription = (
       }
     };
 
-    const subscribeToProfiles = async (ndk: any) => {
+    const subscribeToProfiles = async (ndk: any): Promise<NDKSubscription> => {
       const profileFilter: NDKFilter = { kinds: [0], limit: 50 };
       const sub = ndk.subscribe(profileFilter);
 
-      sub.on('event', (event: any) => {
+      sub.on('event', (event: NDKEvent) => {
         const profile = parseProfile(event);
         if (profile) {
           dispatch(setProfile({ pubkey: profile.pubkey, profile }));
@@ -255,11 +256,11 @@ export const useGoalsSubscription = (
       return sub;
     };
 
-    const subscribeToContacts = async (ndk: any, pubkey: string) => {
+    const subscribeToContacts = async (ndk: any, pubkey: string): Promise<NDKSubscription> => {
       const contactFilter: NDKFilter = { kinds: [3], authors: [pubkey] };
       const sub = ndk.subscribe(contactFilter);
 
-      sub.on('event', (event: any) => {
+      sub.on('event', (event: NDKEvent) => {
         const following = event.tags
           .filter((tag: string[]) => tag[0] === 'p')
           .map((tag: string[]) => tag[1]);
@@ -275,7 +276,7 @@ export const useGoalsSubscription = (
     subscribeToEvents();
 
     return () => {
-      console.log('🧹 Cleaning up subscriptions');
+      if (IS_DEV) console.log('🧹 Cleaning up subscriptions');
       goalSub?.stop();
       profileSub?.stop();
       contactSub?.stop();

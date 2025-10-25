@@ -77,33 +77,26 @@ const GoalDetail = () => {
         commentSub.on('event', (event) => {
           const comment = parseComment(event);
           if (comment) {
-            console.log('💬 Comment loaded:', comment.content.substring(0, 50));
             dispatch(addComment(comment));
             
-            // Fetch the commenter's profile if we don't have it
-            if (!useAppSelector((state) => state.profiles.profiles[comment.authorPubkey])) {
-              const profileFilter: NDKFilter = {
-                kinds: [0],
-                authors: [comment.authorPubkey],
-              };
-              const profileSub = ndk.subscribe(profileFilter, { closeOnEose: true });
-              profileSub.on('event', (profileEvent) => {
-                try {
-                  const profile = JSON.parse(profileEvent.content);
-                  dispatch(setProfile({ 
-                    pubkey: profileEvent.pubkey, 
-                    profile: { pubkey: profileEvent.pubkey, ...profile } 
-                  }));
-                } catch (error) {
-                  console.error('Failed to parse profile:', error);
-                }
-              });
-            }
+            // Subscribe to commenter profile
+            const profileFilter: NDKFilter = {
+              kinds: [0],
+              authors: [comment.authorPubkey],
+            };
+            const profileSub = ndk.subscribe(profileFilter, { closeOnEose: true });
+            profileSub.on('event', (profileEvent) => {
+              try {
+                const profile = JSON.parse(profileEvent.content);
+                dispatch(setProfile({ 
+                  pubkey: profileEvent.pubkey, 
+                  profile: { pubkey: profileEvent.pubkey, ...profile } 
+                }));
+              } catch (error) {
+                console.error('Failed to parse profile:', error);
+              }
+            });
           }
-        });
-        
-        commentSub.on('eose', () => {
-          console.log('Comment subscription eose received');
         });
       } catch (error) {
         console.error('Failed to subscribe to comments:', error);
@@ -113,10 +106,7 @@ const GoalDetail = () => {
     subscribeToComments();
     
     return () => {
-      if (commentSub) {
-        commentSub.stop();
-        console.log('🧹 Stopped comment subscription');
-      }
+      commentSub?.stop();
     };
   }, [goal?.eventId, dispatch]);
   
