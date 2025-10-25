@@ -14,13 +14,14 @@ export async function initNDK() {
   });
 
   // Initialize all relay statuses as disconnected
+  console.log('📡 Initializing relay statuses for:', relays);
   relays.forEach(relayUrl => {
     store.dispatch(updateRelayStatus({ url: relayUrl, connected: false }));
   });
 
   // Set up relay status tracking - only for configured relays
   ndkInstance.pool.on('relay:connect', (relay) => {
-    console.log('🟢 Relay connected:', relay.url);
+    console.log('🟢 Relay connected:', relay.url, '| Is configured:', relays.includes(relay.url));
     store.dispatch(updateRelayStatus({ url: relay.url, connected: true }));
   });
 
