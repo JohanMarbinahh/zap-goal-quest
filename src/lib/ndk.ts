@@ -51,6 +51,11 @@ export async function setupAuth() {
   const ndk = getNDK();
   const authState = store.getState().auth;
 
+  console.log('🔐 setupAuth called. Auth state:', { 
+    hasPubkey: !!authState.pubkey, 
+    hasPrivateKey: !!authState.privateKey 
+  });
+
   // If already authenticated with private key, restore signer
   if (authState.pubkey && authState.privateKey) {
     try {
@@ -67,6 +72,8 @@ export async function setupAuth() {
       // Clear invalid auth state
       store.dispatch(setPubkey({ pubkey: '', npub: '', privateKey: '' }));
     }
+  } else {
+    console.log('⚠️ No auth state to restore');
   }
 
   return null;

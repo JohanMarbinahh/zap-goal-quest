@@ -70,7 +70,9 @@ export const CreateGoalDialog = ({ open, onOpenChange }: CreateGoalDialogProps) 
       const ndk = getNDK();
       
       // Check if NDK has a signer
+      console.log('📝 Creating goal, NDK signer exists:', !!ndk.signer);
       if (!ndk.signer) {
+        console.error('❌ No signer available. Auth state:', { userPubkey });
         toast({
           title: 'Authentication Required',
           description: 'Please log in with your Nostr key to create goals.',
