@@ -122,6 +122,7 @@ const Index = () => {
         goalSub.on('event', (event) => {
           const goal = parseGoal9041(event);
           if (goal) {
+            console.log('💰 Goal loaded - Event ID:', goal.eventId, 'Title:', goal.title);
             dispatch(setGoal({ goalId: goal.goalId, goal }));
           }
         });
@@ -150,14 +151,13 @@ const Index = () => {
               const batchZapSub = ndk.subscribe(zapFilter, { closeOnEose: false });
               
               batchZapSub.on('event', (event) => {
+                console.log('Raw zap event:', event.id, event.tags);
                 const zap = parseZap9735(event);
                 if (zap) {
-                  console.log('Received zap for goal:', { 
-                    zapId: zap.eventId, 
-                    targetGoal: zap.targetEventId, 
-                    amount: zap.amountMsat 
-                  });
+                  console.log('✅ Parsed zap - Receipt ID:', zap.eventId, 'Target Goal ID (e-tag):', zap.targetEventId, 'Amount:', zap.amountMsat / 1000, 'sats');
                   dispatch(addZap(zap));
+                } else {
+                  console.log('❌ Failed to parse zap event');
                 }
               });
               
