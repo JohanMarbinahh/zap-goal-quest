@@ -1,5 +1,5 @@
 import { useParams, useNavigate } from 'react-router-dom';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { ArrowLeft, Zap, Calendar, Target, Hash, Info, Copy, Check } from 'lucide-react';
 import { GoalComments } from '@/components/GoalComments';
 import { GoalReactions } from '@/components/GoalReactions';
@@ -24,6 +24,11 @@ const GoalDetail = () => {
   const [isUpdateDialogOpen, setIsUpdateDialogOpen] = useState(false);
   
   const userPubkey = useAppSelector((state) => state.auth.pubkey);
+
+  // Scroll to top when goal detail page loads
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, [id]);
   
   const goal = useAppSelector((state) => id ? state.goals.goals[id] : undefined);
   const profile = useAppSelector((state) => 
