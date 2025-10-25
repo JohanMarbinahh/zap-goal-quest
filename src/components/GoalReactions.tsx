@@ -147,7 +147,7 @@ export const GoalReactions = ({ goalEventId, goalAuthorPubkey }: GoalReactionsPr
         
         {/* Individual reactions feed */}
         <div className="space-y-2 max-h-[400px] overflow-y-auto">
-          {reactions
+          {[...reactions]
             .sort((a, b) => b.createdAt - a.createdAt)
             .map((reaction) => {
               const reactorProfile = useAppSelector((state) => 
