@@ -45,11 +45,17 @@ const Index = () => {
   const [goalsLoadedCount, setGoalsLoadedCount] = useState(0);
   const [loadStartTime] = useState(Date.now());
 
-  // Update goals loaded count during loading only
+  // Throttle counter updates to avoid excessive re-renders
   useEffect(() => {
-    if (initialLoading) {
+    if (!initialLoading) return;
+    
+    const updateCounter = () => {
       setGoalsLoadedCount(allGoals.length);
-    }
+    };
+    
+    // Throttle updates to every 100ms instead of on every goal
+    const timeoutId = setTimeout(updateCounter, 100);
+    return () => clearTimeout(timeoutId);
   }, [allGoals.length, initialLoading]);
   
   // Memoize filtering, sorting, and pagination calculations
@@ -141,23 +147,55 @@ const Index = () => {
         const goalFilter: NDKFilter = { kinds: [9041 as any], limit: 500 };
         goalSub = ndk.subscribe(goalFilter, { closeOnEose: false });
 
+        // Batch goals to reduce Redux dispatches
+        let goalBatch: Goal9041[] = [];
+        let batchTimeout: NodeJS.Timeout | null = null;
+        
+        const flushBatch = () => {
+          if (goalBatch.length > 0) {
+            goalBatch.forEach(goal => {
+              dispatch(setGoal({ goalId: goal.goalId, goal }));
+            });
+            goalBatch = [];
+          }
+        };
+
         goalSub.on('event', (event) => {
           const goal = parseGoal9041(event);
           if (goal) {
-            dispatch(setGoal({ goalId: goal.goalId, goal }));
-            // Add mock reactions and profiles for demo purposes
-            dispatch(addMockReactions(goal.eventId));
-            Object.entries(mockProfiles).forEach(([pubkey, profile]) => {
-              dispatch(setProfile({ pubkey, profile }));
-            });
+            goalBatch.push(goal);
+            
+            // Batch dispatches every 50ms or when batch reaches 10 goals
+            if (goalBatch.length >= 10) {
+              if (batchTimeout) clearTimeout(batchTimeout);
+              flushBatch();
+            } else if (!batchTimeout) {
+              batchTimeout = setTimeout(() => {
+                flushBatch();
+                batchTimeout = null;
+              }, 50);
+            }
           }
         });
 
         goalSub.on('eose', () => {
+          // Flush any remaining batched goals
+          if (batchTimeout) clearTimeout(batchTimeout);
+          flushBatch();
+          
           const finalCount = Object.keys(store.getState().goals.goals).length;
           const elapsedTime = Date.now() - loadStartTime;
           
           console.log(`📋 Goal subscription complete - ${finalCount} total goals loaded in ${elapsedTime}ms`);
+          
+          // Add mock data only once at the end
+          const currentGoals = Object.values(store.getState().goals.goals);
+          currentGoals.slice(0, 10).forEach((goal: Goal9041) => {
+            dispatch(addMockReactions(goal.eventId));
+          });
+          Object.entries(mockProfiles).forEach(([pubkey, profile]) => {
+            dispatch(setProfile({ pubkey, profile }));
+          });
           
           // Ensure minimum loading time has passed
           const remainingTime = Math.max(0, MIN_LOADING_TIME - elapsedTime);
@@ -172,8 +210,8 @@ const Index = () => {
           }
           
           // After goals are loaded, subscribe to zaps for those specific goals
-          const currentGoals = store.getState().goals.goals;
-          const goalEventIds = Object.values(currentGoals).map((g: Goal9041) => g.eventId);
+          const allGoalsForSubscriptions = store.getState().goals.goals;
+          const goalEventIds = Object.values(allGoalsForSubscriptions).map((g: Goal9041) => g.eventId);
           
           console.log(`🔍 Testing zap availability for ${goalEventIds.length} goals`);
           
@@ -230,7 +268,7 @@ const Index = () => {
           }
 
           // Subscribe to kind 1 (updates) from goal authors
-          const goalAuthors = [...new Set(Object.values(currentGoals).map((g: Goal9041) => g.authorPubkey))];
+          const goalAuthors = [...new Set(Object.values(allGoalsForSubscriptions).map((g: Goal9041) => g.authorPubkey))];
           
           if (goalAuthors.length > 0 && goalEventIds.length > 0) {
             const updateFilter: NDKFilter = {
