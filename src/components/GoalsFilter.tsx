@@ -2,7 +2,6 @@ import { memo } from 'react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Spinner } from '@/components/ui/spinner';
 import { Filter, ArrowUpDown, ArrowUp, ArrowDown } from 'lucide-react';
 
 export type FilterType = 'all' | 'completed' | 'active' | 'following';
@@ -43,9 +42,6 @@ export const GoalsFilter = memo(({
             {totalGoals.toLocaleString()} {totalGoals === 1 ? 'goal' : 'goals'}
             {isLoading && totalGoals % 100 === 0 && '+'}
           </span>
-          {isLoading && (
-            <Spinner size="sm" className="text-primary" />
-          )}
         </div>
         
         <div className="flex flex-wrap gap-3">
