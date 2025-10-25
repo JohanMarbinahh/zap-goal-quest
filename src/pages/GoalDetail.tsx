@@ -117,6 +117,11 @@ const GoalDetail = () => {
               {goal.summary}
             </p>
           )}
+          {goal.description && (
+            <div className="mt-6 prose prose-sm dark:prose-invert max-w-4xl">
+              <p className="text-foreground whitespace-pre-wrap">{goal.description}</p>
+            </div>
+          )}
         </div>
 
         {/* Hero Section */}

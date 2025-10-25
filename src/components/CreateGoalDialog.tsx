@@ -11,6 +11,7 @@ import {
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import {
   Select,
@@ -34,6 +35,7 @@ export const CreateGoalDialog = ({ open, onOpenChange }: CreateGoalDialogProps) 
   const [title, setTitle] = useState('');
   const [targetSats, setTargetSats] = useState('');
   const [imageUrl, setImageUrl] = useState('');
+  const [description, setDescription] = useState('');
   const [status, setStatus] = useState('active');
   const [isLoading, setIsLoading] = useState(false);
   const dispatch = useAppDispatch();
@@ -71,6 +73,11 @@ export const CreateGoalDialog = ({ open, onOpenChange }: CreateGoalDialogProps) 
         ['amount', target.toString()],
         ['unit', 'sat'],
       ];
+      
+      // Add description as custom tag if provided
+      if (description.trim()) {
+        event.tags.push(['description', description.trim()]);
+      }
 
       const publishedEvent = await publishEvent(event);
 
@@ -88,6 +95,7 @@ export const CreateGoalDialog = ({ open, onOpenChange }: CreateGoalDialogProps) 
       setTitle('');
       setTargetSats('');
       setImageUrl('');
+      setDescription('');
       setStatus('active');
       onOpenChange(false);
     } catch (error) {
@@ -145,6 +153,18 @@ export const CreateGoalDialog = ({ open, onOpenChange }: CreateGoalDialogProps) 
                 placeholder="https://example.com/image.jpg"
                 value={imageUrl}
                 onChange={(e) => setImageUrl(e.target.value)}
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="description">Detailed Description (optional)</Label>
+              <Textarea
+                id="description"
+                placeholder="Add more detailed information about your goal, what you're raising funds for, how you'll use the funds, etc."
+                value={description}
+                onChange={(e) => setDescription(e.target.value)}
+                rows={4}
+                className="resize-none"
               />
             </div>
 
