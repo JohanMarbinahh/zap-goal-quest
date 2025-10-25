@@ -8,9 +8,9 @@ import type { Reaction7 } from '@/types/nostr';
 
 // Mock data for demo
 const mockReactions: Reaction7[] = [
-  { eventId: '', targetEventId: '', authorPubkey: 'mock1', content: '👍', createdAt: Date.now() / 1000 },
-  { eventId: '', targetEventId: '', authorPubkey: 'mock2', content: '❤️', createdAt: Date.now() / 1000 },
-  { eventId: '', targetEventId: '', authorPubkey: 'mock3', content: '🔥', createdAt: Date.now() / 1000 },
+  { eventId: '', targetEventId: '', authorPubkey: 'mock1', content: '+', createdAt: Date.now() / 1000 },
+  { eventId: '', targetEventId: '', authorPubkey: 'mock2', content: '+', createdAt: Date.now() / 1000 },
+  { eventId: '', targetEventId: '', authorPubkey: 'mock3', content: '-', createdAt: Date.now() / 1000 },
 ];
 
 export const mockProfiles = {

@@ -1,6 +1,6 @@
 import { memo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Zap, ChevronDown, ChevronUp, Heart, MessageSquare } from 'lucide-react';
+import { Zap, ChevronDown, ChevronUp, ThumbsUp, ThumbsDown, MessageSquare } from 'lucide-react';
 import { Card, CardContent, CardFooter, CardHeader } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
@@ -95,8 +95,12 @@ export const GoalCard = memo(({ goal }: GoalCardProps) => {
           <div className="flex justify-between items-center">
             <div className="flex gap-3 text-xs text-muted-foreground">
               <span className="flex items-center gap-1">
-                <Heart className="w-3 h-3" />
-                {goal.reactionCount}
+                <ThumbsUp className="w-3 h-3" />
+                {goal.likeCount}
+              </span>
+              <span className="flex items-center gap-1">
+                <ThumbsDown className="w-3 h-3" />
+                {goal.dislikeCount}
               </span>
               <span className="flex items-center gap-1">
                 <MessageSquare className="w-3 h-3" />
