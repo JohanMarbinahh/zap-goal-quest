@@ -38,3 +38,11 @@ export interface Reaction7 {
   reactorPubkey: string;
   content: string;
 }
+
+export interface Comment {
+  eventId: string;
+  createdAt: number;
+  targetEventId: string;
+  authorPubkey: string;
+  content: string;
+}

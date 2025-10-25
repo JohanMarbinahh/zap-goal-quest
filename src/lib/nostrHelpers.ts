@@ -1,5 +1,5 @@
 import { NDKEvent } from '@nostr-dev-kit/ndk';
-import { Goal9041, Profile, Zap9735, Reaction7 } from '@/types/nostr';
+import { Goal9041, Profile, Zap9735, Reaction7, Comment } from '@/types/nostr';
 import { decode } from 'light-bolt11-decoder';
 
 export function parseProfile(event: NDKEvent): Profile | null {
@@ -215,4 +215,23 @@ export function formatRelativeTime(timestamp: number): string {
   if (diff < 86400) return `${Math.floor(diff / 3600)}h ago`;
   if (diff < 604800) return `${Math.floor(diff / 86400)}d ago`;
   return new Date(timestamp * 1000).toLocaleDateString();
+}
+
+export function parseComment(event: NDKEvent): Comment | null {
+  try {
+    // Find the #e tag to get the target event ID
+    const eTag = event.tags.find((t) => t[0] === 'e');
+    if (!eTag || !eTag[1]) return null;
+
+    return {
+      eventId: event.id,
+      createdAt: event.created_at || Date.now() / 1000,
+      targetEventId: eTag[1],
+      authorPubkey: event.pubkey,
+      content: event.content,
+    };
+  } catch (error) {
+    console.error('Failed to parse comment:', error);
+    return null;
+  }
 }

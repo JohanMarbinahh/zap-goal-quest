@@ -1,7 +1,7 @@
 import { useParams, useNavigate } from 'react-router-dom';
 import { useState, useEffect } from 'react';
 import { ArrowLeft, Zap, Calendar, Target, Hash, Info, Copy, Check } from 'lucide-react';
-import { GoalReactions } from '@/components/GoalReactions';
+import { GoalComments } from '@/components/GoalComments';
 import { GoalUpdates } from '@/components/GoalUpdates';
 import { CreateUpdateDialog } from '@/components/CreateUpdateDialog';
 import { Button } from '@/components/ui/button';
@@ -13,11 +13,12 @@ import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { useAppSelector, useAppDispatch } from '@/stores/hooks';
-import { addMockReactions, mockProfiles } from '@/stores/reactionsSlice';
 import { setProfile } from '@/stores/profilesSlice';
-import { shortNpub } from '@/lib/ndk';
-import { formatSats, formatRelativeTime } from '@/lib/nostrHelpers';
+import { addComment } from '@/stores/commentsSlice';
+import { shortNpub, getNDK } from '@/lib/ndk';
+import { formatSats, formatRelativeTime, parseComment } from '@/lib/nostrHelpers';
 import { toast } from '@/hooks/use-toast';
+import { NDKFilter, NDKSubscription } from '@nostr-dev-kit/ndk';
 
 const GoalDetail = () => {
   const { id } = useParams<{ id: string }>();
@@ -37,14 +38,67 @@ const GoalDetail = () => {
     goal ? (state.zaps.zapsByGoal[goal.eventId] || []) : []
   );
   
-  // Add mock reactions on mount
+  // Subscribe to comments for this goal
   useEffect(() => {
-    if (goal?.eventId) {
-      dispatch(addMockReactions(goal.eventId));
-      Object.entries(mockProfiles).forEach(([pubkey, profile]) => {
-        dispatch(setProfile({ pubkey, profile }));
-      });
-    }
+    if (!goal?.eventId) return;
+    
+    let commentSub: NDKSubscription | null = null;
+    
+    const subscribeToComments = async () => {
+      try {
+        const ndk = getNDK();
+        const commentFilter: NDKFilter = {
+          kinds: [1],
+          '#e': [goal.eventId],
+          limit: 100,
+        };
+        
+        commentSub = ndk.subscribe(commentFilter, { closeOnEose: false });
+        
+        commentSub.on('event', (event) => {
+          const comment = parseComment(event);
+          if (comment) {
+            console.log('💬 Comment loaded:', comment.content.substring(0, 50));
+            dispatch(addComment(comment));
+            
+            // Fetch the commenter's profile if we don't have it
+            if (!useAppSelector((state) => state.profiles.profiles[comment.authorPubkey])) {
+              const profileFilter: NDKFilter = {
+                kinds: [0],
+                authors: [comment.authorPubkey],
+              };
+              const profileSub = ndk.subscribe(profileFilter, { closeOnEose: true });
+              profileSub.on('event', (profileEvent) => {
+                try {
+                  const profile = JSON.parse(profileEvent.content);
+                  dispatch(setProfile({ 
+                    pubkey: profileEvent.pubkey, 
+                    profile: { pubkey: profileEvent.pubkey, ...profile } 
+                  }));
+                } catch (error) {
+                  console.error('Failed to parse profile:', error);
+                }
+              });
+            }
+          }
+        });
+        
+        commentSub.on('eose', () => {
+          console.log('Comment subscription eose received');
+        });
+      } catch (error) {
+        console.error('Failed to subscribe to comments:', error);
+      }
+    };
+    
+    subscribeToComments();
+    
+    return () => {
+      if (commentSub) {
+        commentSub.stop();
+        console.log('🧹 Stopped comment subscription');
+      }
+    };
   }, [goal?.eventId, dispatch]);
   
   // Calculate raised amount
@@ -287,9 +341,9 @@ const GoalDetail = () => {
         </div>
 
         <div className="grid md:grid-cols-3 gap-6">
-          {/* Left Column: Reactions & Updates */}
+          {/* Left Column: Comments & Updates */}
           <div className="md:col-span-2 space-y-6">
-            <GoalReactions goalEventId={goal.eventId} goalAuthorPubkey={goal.authorPubkey} />
+            <GoalComments goalEventId={goal.eventId} goalAuthorPubkey={goal.authorPubkey} />
             <GoalUpdates 
               goalEventId={goal.eventId} 
               onCreateUpdate={() => setIsUpdateDialogOpen(true)}
