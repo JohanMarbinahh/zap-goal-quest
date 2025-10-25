@@ -36,6 +36,9 @@ const Index = () => {
   const [backgroundLoading, setBackgroundLoading] = useState(false);
   const [displayedTotalCount, setDisplayedTotalCount] = useState(0);
   
+  // Freeze displayed goals when page first shows to prevent flickering
+  const [frozenGoals, setFrozenGoals] = useState<typeof allGoals>([]);
+  
   const dispatch = useAppDispatch();
   const allGoals = useAppSelector(selectEnrichedGoals);
   const userPubkey = useAppSelector((state) => state.auth.pubkey);
@@ -70,7 +73,9 @@ const Index = () => {
   
   // Memoize filtering, sorting, and pagination calculations
   const { totalPages, goals, totalGoalsCount, filteredGoalsCount } = useMemo(() => {
-    const filtered = filterGoals(allGoals, filter, followingList);
+    // Use frozen goals for display to prevent flickering during background loading
+    const goalsToDisplay = frozenGoals.length > 0 ? frozenGoals : allGoals;
+    const filtered = filterGoals(goalsToDisplay, filter, followingList);
     const sorted = sortGoals(filtered, sort, sortDirection);
     
     const pages = Math.min(Math.ceil(sorted.length / GOALS_PER_PAGE), MAX_PAGES);
@@ -81,10 +86,10 @@ const Index = () => {
     return { 
       totalPages: pages, 
       goals: pageGoals,
-      totalGoalsCount: allGoals.length,
+      totalGoalsCount: goalsToDisplay.length,
       filteredGoalsCount: sorted.length
     };
-  }, [allGoals, currentPage, filter, sort, sortDirection, followingList]);
+  }, [frozenGoals, allGoals, currentPage, filter, sort, sortDirection, followingList]);
   
   const handlePageChange = useCallback((page: number) => {
     if (page === currentPage || page < 1 || page > totalPages) return;
@@ -185,6 +190,8 @@ const Index = () => {
                 dispatch(setProfile({ pubkey, profile }));
               });
               
+              // Freeze the current goals for display
+              setFrozenGoals(selectEnrichedGoals(store.getState()));
               setInitialLoading(false);
               setBackgroundLoading(true);
               setDisplayedTotalCount(Math.floor(currentCount / 100) * 100);
@@ -212,6 +219,9 @@ const Index = () => {
             Object.entries(mockProfiles).forEach(([pubkey, profile]) => {
               dispatch(setProfile({ pubkey, profile }));
             });
+            
+            // Freeze the current goals for display
+            setFrozenGoals(selectEnrichedGoals(store.getState()));
             
             // Ensure minimum loading time has passed
             const remainingTime = Math.max(0, MIN_LOADING_TIME - elapsedTime);
