@@ -102,6 +102,18 @@ const GoalDetail = () => {
           Back to Goals
         </Button>
 
+        {/* Title Section */}
+        <div className="mb-8">
+          <h1 className="text-5xl font-bold mb-2">
+            {goal.title || goal.name || 'Untitled Goal'}
+          </h1>
+          {goal.summary && (
+            <p className="text-lg text-muted-foreground mt-4 max-w-4xl">
+              {goal.summary}
+            </p>
+          )}
+        </div>
+
         {/* Hero Section */}
         <div className="grid md:grid-cols-2 gap-8 mb-8">
           <div>
@@ -216,24 +228,6 @@ const GoalDetail = () => {
           </div>
 
           <div>
-            <h1 className="text-4xl font-bold mb-4">
-              {goal.title || goal.name || 'Untitled Goal'}
-            </h1>
-            
-            {/* Description/Summary */}
-            {goal.summary && (
-              <Card className="mb-6">
-                <CardHeader>
-                  <CardTitle className="text-base">Description</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <p className="text-sm text-muted-foreground whitespace-pre-wrap">
-                    {goal.summary}
-                  </p>
-                </CardContent>
-              </Card>
-            )}
-            
             {/* Progress Card */}
             <Card className="mb-6">
               <CardContent className="pt-6">
