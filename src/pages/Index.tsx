@@ -7,11 +7,13 @@ import { GoalCard } from '@/components/GoalCard';
 import { CreateGoalDialog } from '@/components/CreateGoalDialog';
 import { GoalsFilter, FilterType, SortType } from '@/components/GoalsFilter';
 import { useAppDispatch, useAppSelector } from '@/stores/hooks';
+import { store } from '@/stores/store';
 import { setGoal } from '@/stores/goalsSlice';
 import { setProfile } from '@/stores/profilesSlice';
 import { addZap } from '@/stores/zapsSlice';
 import { setFollowing } from '@/stores/contactsSlice';
 import { selectEnrichedGoals } from '@/stores/selectors';
+import { Goal9041 } from '@/types/nostr';
 import { getNDK } from '@/lib/ndk';
 import { parseGoal9041, parseProfile, parseZap9735 } from '@/lib/nostrHelpers';
 import { filterGoals, sortGoals } from '@/lib/filterHelpers';
@@ -128,6 +130,42 @@ const Index = () => {
           console.log('Goal subscription eose received');
           if (loadingTimeout) clearTimeout(loadingTimeout);
           setInitialLoading(false);
+          
+          // After goals are loaded, subscribe to zaps for those specific goals
+          const currentGoals = store.getState().goals.goals;
+          const goalEventIds = Object.values(currentGoals).map((g: Goal9041) => g.eventId);
+          
+          console.log(`Subscribing to zaps for ${goalEventIds.length} goals`);
+          
+          if (goalEventIds.length > 0) {
+            // Subscribe to zaps filtered by goal event IDs
+            // Batch into groups of 100 to avoid filter size limits
+            const batchSize = 100;
+            for (let i = 0; i < goalEventIds.length; i += batchSize) {
+              const batch = goalEventIds.slice(i, i + batchSize);
+              const zapFilter: NDKFilter = { 
+                kinds: [9735 as any], 
+                "#e": batch 
+              };
+              const batchZapSub = ndk.subscribe(zapFilter, { closeOnEose: false });
+              
+              batchZapSub.on('event', (event) => {
+                const zap = parseZap9735(event);
+                if (zap) {
+                  console.log('Received zap for goal:', { 
+                    zapId: zap.eventId, 
+                    targetGoal: zap.targetEventId, 
+                    amount: zap.amountMsat 
+                  });
+                  dispatch(addZap(zap));
+                }
+              });
+              
+              batchZapSub.on('eose', () => {
+                console.log(`Zap batch ${Math.floor(i / batchSize) + 1} complete`);
+              });
+            }
+          }
         });
 
         // Subscribe to kind 0 (profiles)
@@ -139,22 +177,6 @@ const Index = () => {
           if (profile) {
             dispatch(setProfile({ pubkey: profile.pubkey, profile }));
           }
-        });
-
-        // Subscribe to kind 9735 (zaps)
-        const zapFilter: NDKFilter = { kinds: [9735 as any], limit: 1000 };
-        zapSub = ndk.subscribe(zapFilter, { closeOnEose: false });
-
-        zapSub.on('event', (event) => {
-          const zap = parseZap9735(event);
-          if (zap) {
-            console.log('Received zap:', zap);
-            dispatch(addZap(zap));
-          }
-        });
-        
-        zapSub.on('eose', () => {
-          console.log('Zap subscription complete');
         });
 
         // Subscribe to kind 3 (contact lists) - only if user is logged in
