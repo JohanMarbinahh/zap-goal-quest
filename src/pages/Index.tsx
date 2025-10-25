@@ -23,9 +23,9 @@ import { NDKFilter, NDKSubscription } from '@nostr-dev-kit/ndk';
 
 const GOALS_PER_PAGE = 30;
 const MAX_PAGES = 5;
-const MIN_GOALS_TO_SHOW = 100; // Wait for more goals before showing
-const MIN_LOADING_TIME = 2000; // Minimum 2 seconds loading
-const MAX_LOADING_TIME = 8000; // Maximum 8 seconds loading
+const MIN_GOALS_TO_SHOW = 30; // Show page as soon as we have first page worth of goals
+const MIN_LOADING_TIME = 1000; // Minimum 1 second loading
+const MAX_LOADING_TIME = 5000; // Maximum 5 seconds loading
 
 const Index = () => {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -152,17 +152,22 @@ const Index = () => {
         goalSub.on('event', (event) => {
           const goal = parseGoal9041(event);
           if (goal) {
-            const currentCount = Object.keys(store.getState().goals.goals).length;
-            if (currentCount % 50 === 0) {
-              console.log(`💰 ${currentCount} goals loaded`);
-            }
-            
             dispatch(setGoal({ goalId: goal.goalId, goal }));
             // Add mock reactions and profiles for demo purposes
             dispatch(addMockReactions(goal.eventId));
             Object.entries(mockProfiles).forEach(([pubkey, profile]) => {
               dispatch(setProfile({ pubkey, profile }));
             });
+            
+            // Check if we've reached the minimum number of goals to show
+            const currentCount = Object.keys(store.getState().goals.goals).length;
+            const elapsedTime = Date.now() - loadStartTime;
+            
+            if (currentCount >= MIN_GOALS_TO_SHOW && elapsedTime >= MIN_LOADING_TIME) {
+              console.log(`✅ ${currentCount} goals loaded - showing page!`);
+              if (loadingTimeout) clearTimeout(loadingTimeout);
+              setInitialLoading(false);
+            }
           }
         });
 
@@ -349,7 +354,7 @@ const Index = () => {
         </div>
 
         {initialLoading ? (
-          <RelayLoadingStatus goalsLoaded={goalsLoadedCount} targetGoals={MIN_GOALS_TO_SHOW} />
+          <RelayLoadingStatus goalsLoaded={goalsLoadedCount} />
         ) : allGoals.length === 0 ? (
           <div className="text-center py-20">
             <div className="inline-flex p-6 rounded-full bg-primary/10 mb-4">
