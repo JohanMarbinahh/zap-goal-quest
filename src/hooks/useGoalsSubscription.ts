@@ -176,7 +176,10 @@ export const useGoalsSubscription = (
       const currentGoals = store.getState().goals.goals;
       const goalEventIds = Object.values(currentGoals).map((g: Goal9041) => g.eventId);
 
-      if (IS_DEV) console.log(`🔍 Subscribing to data for ${goalEventIds.length} goals`);
+      if (IS_DEV) {
+        console.log(`🔍 Subscribing to data for ${goalEventIds.length} goals`);
+        console.log(`📋 Sample goal event IDs:`, goalEventIds.slice(0, 5));
+      }
 
       // Filter zaps by goal event IDs using #e tag
       const allZapsFilter: NDKFilter = {
@@ -192,6 +195,14 @@ export const useGoalsSubscription = (
       testZapSub.on('event', (event: NDKEvent) => {
         zapCount++;
         const zap = parseZap9735(event);
+        if (IS_DEV && zapCount <= 3) {
+          console.log(`⚡ Sample zap #${zapCount}:`, {
+            eventId: event.id,
+            targetEventId: zap?.targetEventId,
+            amount: zap?.amountMsat,
+            tags: event.tags.filter(t => t[0] === 'e' || t[0] === 'p').slice(0, 3)
+          });
+        }
         if (zap) {
           dispatch(addZap(zap));
           if (zap.targetEventId) {
