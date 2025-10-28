@@ -178,27 +178,39 @@ export const useGoalsSubscription = (
 
       if (IS_DEV) console.log(`🔍 Subscribing to data for ${goalEventIds.length} goals`);
 
+      // Filter zaps by goal event IDs using #e tag
       const allZapsFilter: NDKFilter = {
         kinds: [9735 as any],
-        limit: 500
+        '#e': goalEventIds,
+        limit: 10000 // Increased limit to catch all zaps for our goals
       };
       const testZapSub = ndk.subscribe(allZapsFilter, { closeOnEose: true });
 
       let zapCount = 0;
-      let matchingZapCount = 0;
-      const goalIdSet = new Set(goalEventIds);
+      let zapsByGoalCount: Record<string, number> = {};
 
       testZapSub.on('event', (event: NDKEvent) => {
         zapCount++;
         const zap = parseZap9735(event);
-        if (zap && zap.targetEventId && goalIdSet.has(zap.targetEventId)) {
-          matchingZapCount++;
+        if (zap) {
           dispatch(addZap(zap));
+          if (zap.targetEventId) {
+            zapsByGoalCount[zap.targetEventId] = (zapsByGoalCount[zap.targetEventId] || 0) + 1;
+          }
         }
       });
 
       testZapSub.on('eose', () => {
-        if (IS_DEV) console.log(`📊 ${zapCount} zaps found, ${matchingZapCount} matched`);
+        const goalsWithZaps = Object.keys(zapsByGoalCount).length;
+        const totalAmount = Object.values(store.getState().zaps.zapsByGoal)
+          .flat()
+          .reduce((sum, zap) => sum + Math.floor(zap.amountMsat / 1000), 0);
+        
+        if (IS_DEV) {
+          console.log(`⚡ ${zapCount} zaps loaded for ${goalsWithZaps} goals`);
+          console.log(`💰 Total raised across all goals: ${totalAmount.toLocaleString()} sats`);
+          console.log('📊 Zaps per goal:', zapsByGoalCount);
+        }
       });
     };
 
