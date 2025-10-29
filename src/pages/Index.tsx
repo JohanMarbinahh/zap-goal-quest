@@ -27,7 +27,6 @@ const Index = () => {
   const {
     initialLoading,
     backgroundLoading,
-    goalsLoadedCount,
     displayedTotalCount,
     frozenGoals,
   } = useGoalsSubscription(allGoals, userPubkey);
@@ -79,7 +78,7 @@ const Index = () => {
     return (
       <main className="container mx-auto px-4 py-8">
         <div className="max-w-7xl mx-auto">
-          <RelayLoadingStatus goalsLoaded={goalsLoadedCount} />
+          <RelayLoadingStatus />
         </div>
       </main>
     );

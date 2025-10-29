@@ -24,7 +24,6 @@ const IS_DEV = import.meta.env.DEV;
 interface UseGoalsSubscriptionResult {
   initialLoading: boolean;
   backgroundLoading: boolean;
-  goalsLoadedCount: number;
   displayedTotalCount: number;
   frozenGoals: EnrichedGoal[];
 }
@@ -36,17 +35,10 @@ export const useGoalsSubscription = (
   const dispatch = useAppDispatch();
   const [initialLoading, setInitialLoading] = useState(existingGoals.length === 0);
   const [backgroundLoading, setBackgroundLoading] = useState(false);
-  const [goalsLoadedCount, setGoalsLoadedCount] = useState(0);
   const [displayedTotalCount, setDisplayedTotalCount] = useState(0);
   const [frozenGoals, setFrozenGoals] = useState<EnrichedGoal[]>([]);
   const loadStartTime = useRef(Date.now());
   const hasSubscribed = useRef(false);
-
-  useEffect(() => {
-    if (initialLoading) {
-      setGoalsLoadedCount(existingGoals.length);
-    }
-  }, [existingGoals.length, initialLoading]);
 
   useEffect(() => {
     if (!initialLoading && backgroundLoading) {
@@ -250,7 +242,6 @@ export const useGoalsSubscription = (
   return {
     initialLoading,
     backgroundLoading,
-    goalsLoadedCount,
     displayedTotalCount,
     frozenGoals,
   };
