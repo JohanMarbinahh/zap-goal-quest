@@ -46,7 +46,7 @@ export const useGoalsSubscription = (
       if (roundedCount > displayedTotalCount) {
         setDisplayedTotalCount(roundedCount);
       }
-    } else if (!backgroundLoading) {
+    } else if (!backgroundLoading && displayedTotalCount !== existingGoals.length) {
       setDisplayedTotalCount(existingGoals.length);
     }
   }, [existingGoals.length, initialLoading, backgroundLoading, displayedTotalCount]);
