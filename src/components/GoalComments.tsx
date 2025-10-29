@@ -5,15 +5,18 @@ import { useAppSelector } from '@/stores/hooks';
 import { useGoalComments } from '@/hooks/useGoalComments';
 import { shortNpub } from '@/lib/ndk';
 import { formatRelativeTime } from '@/lib/nostrHelpers';
+import { CreateCommentForm } from './CreateCommentForm';
 
 interface GoalCommentsProps {
   goalEventId: string;
   goalAuthorPubkey: string;
 }
 
-export function GoalComments({ goalEventId }: GoalCommentsProps) {
+export function GoalComments({ goalEventId, goalAuthorPubkey }: GoalCommentsProps) {
   const comments = useGoalComments(goalEventId);
   const allProfiles = useAppSelector((state) => state.profiles.profiles);
+  const userPubkey = useAppSelector((state) => state.auth.pubkey);
+  const isLoggedIn = !!userPubkey;
 
   const sortedComments = [...comments].sort((a, b) => b.createdAt - a.createdAt);
 
@@ -26,6 +29,15 @@ export function GoalComments({ goalEventId }: GoalCommentsProps) {
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
+        {/* Comment Input */}
+        {isLoggedIn ? (
+          <CreateCommentForm goalEventId={goalEventId} goalAuthorPubkey={goalAuthorPubkey} />
+        ) : (
+          <div className="p-4 border border-dashed rounded-lg text-center text-sm text-muted-foreground">
+            Log in to post comments
+          </div>
+        )}
+
         {/* Comments Feed */}
         <div className="space-y-3 max-h-[600px] overflow-y-auto">
           {sortedComments.map((comment) => {
@@ -64,7 +76,7 @@ export function GoalComments({ goalEventId }: GoalCommentsProps) {
           {comments.length === 0 && (
             <div className="text-center py-12 text-muted-foreground">
               <MessageSquare className="w-12 h-12 mx-auto mb-3 opacity-50" />
-              <p>No comments yet.</p>
+              <p>No comments yet. {isLoggedIn ? 'Be the first!' : 'Log in to comment!'}</p>
             </div>
           )}
         </div>

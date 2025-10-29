@@ -176,13 +176,17 @@ export const useGoalsSubscription = (
       const currentGoals = store.getState().goals.goals;
       const goalEventIds = Object.values(currentGoals).map((g: Goal9041) => g.eventId);
 
-      if (IS_DEV) {
-        console.log(`🔍 Subscribing to data for ${goalEventIds.length} goals`);
-        console.log(`📋 Sample goal event IDs:`, goalEventIds.slice(0, 5));
-      }
+            if (IS_DEV) {
+              console.log(`🔍 Subscribing to data for ${goalEventIds.length} goals`);
+              console.log(`📋 Sample goal event IDs:`, goalEventIds.slice(0, 5));
+            }
 
-      // Filter zaps by goal event IDs using #e tag
-      const allZapsFilter: NDKFilter = {
+            // ==================================================
+            // Subscribe to Zaps (Kind 9735)
+            // ==================================================
+            // Filter zaps by goal event IDs using #e tag
+            // This means: "Get all zap receipts that reference these goal IDs"
+            const allZapsFilter: NDKFilter = {
         kinds: [9735 as any],
         '#e': goalEventIds,
         limit: 10000 // Increased limit to catch all zaps for our goals
