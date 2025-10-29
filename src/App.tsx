@@ -18,12 +18,11 @@ const queryClient = new QueryClient();
 
 const App = () => {
   const isAuthenticated = useAppSelector((state) => !!state.auth.pubkey);
-  const privateKey = useAppSelector((state) => state.auth.privateKey);
 
   useEffect(() => {
     const init = async () => {
       try {
-        console.log('🚀 App useEffect running. PrivateKey exists:', !!privateKey, 'Length:', privateKey?.length);
+        console.log('🚀 App initializing...');
         await initNDK();
         await setupAuth();
         console.log('✅ Init complete. NDK signer exists:', !!getNDK().signer);
@@ -32,7 +31,7 @@ const App = () => {
       }
     };
     init();
-  }, [privateKey]);
+  }, []);
 
   return (
     <QueryClientProvider client={queryClient}>

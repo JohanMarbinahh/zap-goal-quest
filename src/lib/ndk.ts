@@ -3,6 +3,7 @@ import { store } from '@/stores/store';
 import { updateRelayStatus, mergeDefaultRelays } from '@/stores/relaysSlice';
 import { setPubkey } from '@/stores/authSlice';
 import { nip19 } from 'nostr-tools';
+import { saveAuthToStorage, loadAuthFromStorage, clearAuthFromStorage } from './authStorage';
 
 let ndkInstance: NDK | null = null;
 
@@ -57,34 +58,42 @@ export function getNDK() {
 
 export async function setupAuth() {
   const ndk = getNDK();
-  const authState = store.getState().auth;
-
-  console.log('🔐 setupAuth called. Auth state:', { 
-    hasPubkey: !!authState.pubkey,
-    pubkey: authState.pubkey?.slice(0, 8),
-    hasPrivateKey: !!authState.privateKey,
-    privateKeyLength: authState.privateKey?.length,
+  
+  // First check localStorage for saved auth
+  const storedAuth = loadAuthFromStorage();
+  
+  console.log('🔐 setupAuth called. Stored auth:', { 
+    hasStoredAuth: !!storedAuth,
+    hasPubkey: !!storedAuth?.pubkey,
+    pubkey: storedAuth?.pubkey?.slice(0, 8),
     currentSignerExists: !!ndk.signer
   });
 
-  // If already authenticated with private key, restore signer
-  if (authState.pubkey && authState.privateKey) {
+  // If we have stored auth, restore it
+  if (storedAuth?.pubkey && storedAuth?.privateKey) {
     try {
-      const signer = new NDKPrivateKeySigner(authState.privateKey);
+      const signer = new NDKPrivateKeySigner(storedAuth.privateKey);
       ndk.signer = signer;
       
-      // Verify the signer works by getting the user
-      const user = await signer.user();
-      console.log('✅ Restored signer for pubkey:', user.pubkey.slice(0, 8));
+      // Restore to Redux
+      store.dispatch(setPubkey({
+        pubkey: storedAuth.pubkey,
+        npub: storedAuth.npub,
+        privateKey: storedAuth.privateKey,
+      }));
       
-      return { pubkey: authState.pubkey, npub: authState.npub };
+      // Verify the signer works
+      const user = await signer.user();
+      console.log('✅ Restored signer from localStorage:', user.pubkey.slice(0, 8));
+      
+      return { pubkey: storedAuth.pubkey, npub: storedAuth.npub };
     } catch (error) {
       console.error('❌ Failed to restore signer:', error);
-      // Clear invalid auth state
-      store.dispatch(setPubkey({ pubkey: '', npub: '', privateKey: '' }));
+      // Clear invalid auth
+      clearAuthFromStorage();
     }
   } else {
-    console.log('⚠️ No auth state to restore');
+    console.log('⚠️ No stored auth to restore');
   }
 
   return null;
@@ -121,7 +130,9 @@ export async function loginWithPrivateKey(privateKey: string) {
       signerSet: !!ndk.signer
     });
 
+    // Store in both Redux and localStorage
     store.dispatch(setPubkey({ pubkey: user.pubkey, npub, privateKey: hexKey }));
+    saveAuthToStorage(user.pubkey, npub, hexKey);
     
     // Verify it was stored
     const storedAuth = store.getState().auth;
