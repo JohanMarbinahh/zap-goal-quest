@@ -23,9 +23,6 @@ const Index = () => {
 
   const allGoals = useAppSelector(selectEnrichedGoals);
   const userPubkey = useAppSelector((state) => state.auth.pubkey);
-  const followingList = useAppSelector((state) =>
-    userPubkey ? state.contacts.following[userPubkey] || [] : []
-  );
 
   const {
     initialLoading,
@@ -42,7 +39,6 @@ const Index = () => {
     filter,
     sort,
     sortDirection,
-    followingList,
     searchQuery
   );
 
@@ -127,7 +123,6 @@ const Index = () => {
               onSearchChange={handleSearchChange}
               totalGoals={displayedTotalCount}
               filteredGoals={filteredGoalsCount}
-              isLoggedIn={!!userPubkey}
               isLoading={backgroundLoading}
             />
 

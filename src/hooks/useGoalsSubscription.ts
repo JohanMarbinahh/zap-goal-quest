@@ -4,7 +4,6 @@ import { store } from '@/stores/store';
 import { setGoal } from '@/stores/goalsSlice';
 import { setProfile } from '@/stores/profilesSlice';
 import { addZap } from '@/stores/zapsSlice';
-import { setFollowing } from '@/stores/contactsSlice';
 import { selectEnrichedGoals, EnrichedGoal } from '@/stores/selectors';
 import { Goal9041 } from '@/types/nostr';
 import { getNDK } from '@/lib/ndk';
@@ -63,7 +62,6 @@ export const useGoalsSubscription = (
   useEffect(() => {
     let goalSub: NDKSubscription | null = null;
     let profileSub: NDKSubscription | null = null;
-    let contactSub: NDKSubscription | null = null;
 
     const subscribeToEvents = async () => {
       if (hasSubscribed.current) {
@@ -87,9 +85,6 @@ export const useGoalsSubscription = (
 
         goalSub = await subscribeToGoals(ndk);
         profileSub = await subscribeToProfiles(ndk);
-        if (userPubkey) {
-          contactSub = await subscribeToContacts(ndk, userPubkey);
-        }
       } catch (error) {
         console.error('Failed to subscribe to events:', error);
       }
@@ -243,30 +238,12 @@ export const useGoalsSubscription = (
       return sub;
     };
 
-    const subscribeToContacts = async (ndk: any, pubkey: string): Promise<NDKSubscription> => {
-      const contactFilter: NDKFilter = { kinds: [3], authors: [pubkey] };
-      const sub = ndk.subscribe(contactFilter);
-
-      sub.on('event', (event: NDKEvent) => {
-        const following = event.tags
-          .filter((tag: string[]) => tag[0] === 'p')
-          .map((tag: string[]) => tag[1]);
-
-        if (following.length > 0) {
-          dispatch(setFollowing({ pubkey, following }));
-        }
-      });
-
-      return sub;
-    };
-
     subscribeToEvents();
 
     return () => {
       if (IS_DEV) console.log('🧹 Cleaning up subscriptions');
       goalSub?.stop();
       profileSub?.stop();
-      contactSub?.stop();
     };
   }, []);
 

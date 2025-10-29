@@ -5,8 +5,8 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Filter, ArrowUp, ArrowDown, Search } from 'lucide-react';
 
-export type FilterType = 'all' | 'completed' | 'active' | 'following';
-export type SortType = 'date' | 'contributed' | 'progress' | 'zaps' | 'target';
+export type FilterType = 'all' | 'active';
+export type SortType = 'date' | 'contributed';
 export type SortDirection = 'asc' | 'desc';
 
 interface GoalsFilterProps {
@@ -20,7 +20,6 @@ interface GoalsFilterProps {
   onSearchChange: (query: string) => void;
   totalGoals: number;
   filteredGoals: number;
-  isLoggedIn: boolean;
   isLoading?: boolean;
 }
 
@@ -35,7 +34,6 @@ export const GoalsFilter = memo(({
   onSearchChange,
   totalGoals,
   filteredGoals,
-  isLoggedIn,
   isLoading = false,
 }: GoalsFilterProps) => {
   return (
@@ -69,8 +67,6 @@ export const GoalsFilter = memo(({
             <SelectContent>
               <SelectItem value="all">All Goals</SelectItem>
               <SelectItem value="active">Active</SelectItem>
-              <SelectItem value="completed">Completed</SelectItem>
-              {isLoggedIn && <SelectItem value="following">Following</SelectItem>}
             </SelectContent>
           </Select>
 
@@ -82,9 +78,6 @@ export const GoalsFilter = memo(({
               <SelectContent>
                 <SelectItem value="date">Date Created</SelectItem>
                 <SelectItem value="contributed">Amount Contributed</SelectItem>
-                <SelectItem value="progress">% Completion</SelectItem>
-                <SelectItem value="zaps">Zaps Count</SelectItem>
-                <SelectItem value="target">Target Amount</SelectItem>
               </SelectContent>
             </Select>
 
@@ -124,11 +117,7 @@ export const GoalsFilter = memo(({
           )}
           {(sort !== 'date' || sortDirection !== 'desc') && (
             <Badge variant="secondary" className="gap-2">
-              Sort: {sort === 'date' ? 'Date Created' :
-                     sort === 'contributed' ? 'Amount Contributed' :
-                     sort === 'progress' ? '% Completion' :
-                     sort === 'zaps' ? 'Zaps Count' :
-                     'Target Amount'} ({sortDirection === 'asc' ? 'Ascending' : 'Descending'})
+              Sort: {sort === 'date' ? 'Date Created' : 'Amount Contributed'} ({sortDirection === 'asc' ? 'Ascending' : 'Descending'})
             </Badge>
           )}
         </div>

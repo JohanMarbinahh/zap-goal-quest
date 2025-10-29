@@ -20,12 +20,11 @@ export const useGoalsDisplay = (
   filter: FilterType,
   sort: SortType,
   sortDirection: SortDirection,
-  followingList: string[],
   searchQuery: string = ''
 ): UseGoalsDisplayResult => {
   return useMemo(() => {
     const goalsToDisplay = frozenGoals.length > 0 ? frozenGoals : allGoals;
-    const filtered = filterGoals(goalsToDisplay, filter, followingList, searchQuery);
+    const filtered = filterGoals(goalsToDisplay, filter, searchQuery);
     const sorted = sortGoals(filtered, sort, sortDirection);
 
     const pages = Math.min(Math.ceil(sorted.length / GOALS_PER_PAGE), MAX_PAGES);
@@ -39,5 +38,5 @@ export const useGoalsDisplay = (
       totalGoalsCount: goalsToDisplay.length,
       filteredGoalsCount: sorted.length,
     };
-  }, [frozenGoals, allGoals, currentPage, filter, sort, sortDirection, followingList, searchQuery]);
+  }, [frozenGoals, allGoals, currentPage, filter, sort, sortDirection, searchQuery]);
 };
