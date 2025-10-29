@@ -1,5 +1,4 @@
 import { createSlice, PayloadAction } from '@reduxjs/toolkit';
-import { clearAuthFromStorage } from '@/lib/authStorage';
 
 interface AuthState {
   pubkey: string | null;
@@ -29,7 +28,6 @@ const authSlice = createSlice({
       state.pubkey = null;
       state.npub = null;
       state.privateKey = null;
-      clearAuthFromStorage();
     },
   },
 });

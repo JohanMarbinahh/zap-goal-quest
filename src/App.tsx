@@ -3,7 +3,7 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import { initNDK, setupAuth, getNDK } from "@/lib/ndk";
 import { useAppSelector } from "@/stores/hooks";
 import Index from "./pages/Index";
@@ -18,31 +18,21 @@ const queryClient = new QueryClient();
 
 const App = () => {
   const isAuthenticated = useAppSelector((state) => !!state.auth.pubkey);
-  const [isInitializing, setIsInitializing] = useState(true);
+  const privateKey = useAppSelector((state) => state.auth.privateKey);
 
   useEffect(() => {
     const init = async () => {
       try {
-        console.log('🚀 App initializing...');
+        console.log('🚀 App useEffect running. PrivateKey exists:', !!privateKey, 'Length:', privateKey?.length);
         await initNDK();
         await setupAuth();
         console.log('✅ Init complete. NDK signer exists:', !!getNDK().signer);
       } catch (error) {
         console.error('Failed to initialize NDK:', error);
-      } finally {
-        setIsInitializing(false);
       }
     };
     init();
-  }, []);
-
-  if (isInitializing) {
-    return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <div className="text-muted-foreground">Loading...</div>
-      </div>
-    );
-  }
+  }, [privateKey]);
 
   return (
     <QueryClientProvider client={queryClient}>
