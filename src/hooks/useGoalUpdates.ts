@@ -23,10 +23,13 @@ export const useGoalUpdates = (goalEventId: string, authorPubkey: string) => {
         updateSub = ndk.subscribe(updateFilter, { closeOnEose: false });
 
         updateSub.on('event', (event: NDKEvent) => {
+
           const update = parseGoalUpdate(event);
           if (update) {
             setUpdates(prev => {
+              console.log("prev", prev)
               const exists = prev.some(u => u.eventId === update.eventId);
+              console.log(exists)
               return exists ? prev : [...prev, update].sort((a, b) => b.createdAt - a.createdAt);
             });
           }

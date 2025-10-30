@@ -183,7 +183,10 @@ export function parseReaction7(event: NDKEvent): Reaction7 | null {
 export function parseGoalUpdate(event: NDKEvent): { eventId: string; goalEventId: string; authorPubkey: string; content: string; createdAt: number } | null {
   try {
     const goalEventTag = event.tags.find(tag => tag[0] === 'e');
-    if (!goalEventTag) return null;
+    const goalUpdateTag = event.tags.find(tag => tag[0] === "Update")
+
+    console.log("goal", goalEventTag)
+    if (!goalEventTag || !goalUpdateTag) return null;
 
     return {
       eventId: event.id,
@@ -223,7 +226,8 @@ export function parseComment(event: NDKEvent): Comment | null {
   try {
     // Find the #e tag to get the target event ID
     const eTag = event.tags.find((t) => t[0] === 'e');
-    if (!eTag || !eTag[1]) return null;
+    const updateTag = event.tags.find((t) => t[0] === "Update")
+    if (!eTag || !eTag[1] || updateTag) return null;
 
     return {
       eventId: event.id,

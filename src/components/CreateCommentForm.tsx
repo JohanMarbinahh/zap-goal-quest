@@ -11,7 +11,6 @@ import { toast } from '@/hooks/use-toast';
  * How it works:
  * 1. User types comment text
  * 2. On submit, creates a Nostr Kind 1 event
- * 3. Tags the goal with ['e', goalEventId, '', 'root']
  * 4. Tags the goal author with ['p', goalAuthorPubkey]
  * 5. Publishes to Nostr relays
  * 6. Comment appears automatically via subscription in useGoalComments
@@ -65,7 +64,7 @@ export const CreateCommentForm = ({
       
       // Add tags to create relationships
       event.tags = [
-        ['e', goalEventId, '', 'root'],  // Links to goal (root = top-level comment)
+        ['e', goalEventId],  // Links to goal (root = top-level comment)
         ['p', goalAuthorPubkey],         // Tags goal author (for notifications)
       ];
       

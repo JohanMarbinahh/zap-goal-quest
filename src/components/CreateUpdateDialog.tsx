@@ -35,8 +35,9 @@ export const CreateUpdateDialog = ({ open, onOpenChange, goalEventId, goalAuthor
       event.kind = 1;
       event.content = content;
       event.tags = [
-        ['e', goalEventId, '', 'root'],
+        ['e', goalEventId],
         ['p', goalAuthorPubkey],
+        ['Update', ""]
       ];
       
       await event.publish();

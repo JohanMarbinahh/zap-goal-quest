@@ -6,6 +6,8 @@ import { useAppSelector } from '@/stores/hooks';
 import { useGoalUpdates } from '@/hooks/useGoalUpdates';
 import { shortNpub } from '@/lib/ndk';
 import { formatRelativeTime } from '@/lib/nostrHelpers';
+import { ScrollArea } from '@/components/ui/scroll-area';
+
 
 interface GoalUpdatesProps {
   goalEventId: string;
@@ -18,7 +20,10 @@ export const GoalUpdates = ({ goalEventId, onCreateUpdate, isGoalAuthor }: GoalU
     const goal = Object.values(state.goals.goals).find(g => g.eventId === goalEventId);
     return goal?.authorPubkey || '';
   });
+
+  console.log("hello")
   const updates = useGoalUpdates(goalEventId, authorPubkey);
+  const profiles = useAppSelector((state) => state.profiles.profiles);
 
   return (
     <Card>
@@ -33,50 +38,51 @@ export const GoalUpdates = ({ goalEventId, onCreateUpdate, isGoalAuthor }: GoalU
           )}
         </div>
       </CardHeader>
-      <CardContent>
-        <div className="space-y-4 max-h-[500px] overflow-y-auto">
-          {updates
-            .sort((a, b) => b.createdAt - a.createdAt)
-            .map((update) => {
-              const authorProfile = useAppSelector((state) => 
-                state.profiles.profiles[update.authorPubkey]
-              );
-              return (
-                <div
-                  key={update.eventId}
-                  className="p-4 rounded-lg bg-secondary/50 border border-border/50"
-                >
-                  <div className="flex items-start gap-3 mb-3">
-                    <Avatar className="w-10 h-10">
-                      <AvatarImage src={authorProfile?.picture} />
-                      <AvatarFallback className="bg-primary/10 text-primary">
-                        {authorProfile?.name?.[0]?.toUpperCase() || 'U'}
-                      </AvatarFallback>
-                    </Avatar>
-                    <div className="flex-1">
-                      <div className="flex items-center gap-2">
-                        <span className="font-semibold">
-                          {authorProfile?.displayName ||
-                            authorProfile?.name ||
-                            shortNpub(update.authorPubkey)}
-                        </span>
-                        <span className="text-xs text-muted-foreground">
-                          {formatRelativeTime(update.createdAt)}
-                        </span>
+      <ScrollArea className="h-[400px] pr-2">
+
+        <CardContent>
+          <div className="space-y-4 max-h-[500px] overflow-y-auto">
+            {updates
+              .sort((a, b) => b.createdAt - a.createdAt)
+              .map((update) => {
+                const authorProfile = profiles[update.authorPubkey];
+                return (
+                  <div
+                    key={update.eventId}
+                    className="p-4 rounded-lg bg-secondary/50 border border-border/50"
+                  >
+                    <div className="flex items-start gap-3 mb-3">
+                      <Avatar className="w-10 h-10">
+                        <AvatarImage src={authorProfile?.picture} />
+                        <AvatarFallback className="bg-primary/10 text-primary">
+                          {authorProfile?.name?.[0]?.toUpperCase() || 'U'}
+                        </AvatarFallback>
+                      </Avatar>
+                      <div className="flex-1">
+                        <div className="flex items-center gap-2">
+                          <span className="font-semibold">
+                            {authorProfile?.displayName ||
+                              authorProfile?.name ||
+                              shortNpub(update.authorPubkey)}
+                          </span>
+                          <span className="text-xs text-muted-foreground">
+                            {formatRelativeTime(update.createdAt)}
+                          </span>
+                        </div>
                       </div>
                     </div>
+                    <div className="text-sm whitespace-pre-wrap">{update.content}</div>
                   </div>
-                  <div className="text-sm whitespace-pre-wrap">{update.content}</div>
-                </div>
-              );
-            })}
-          {updates.length === 0 && (
-            <div className="text-center py-8 text-muted-foreground">
-              No updates yet. {isGoalAuthor ? 'Post the first update!' : 'Check back later.'}
-            </div>
-          )}
-        </div>
-      </CardContent>
+                );
+              })}
+            {updates.length === 0 && (
+              <div className="text-center py-8 text-muted-foreground">
+                No updates yet. {isGoalAuthor ? 'Post the first update!' : 'Check back later.'}
+              </div>
+            )}
+          </div>
+        </CardContent>
+      </ScrollArea>
     </Card>
   );
 };

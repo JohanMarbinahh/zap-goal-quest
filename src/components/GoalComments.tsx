@@ -6,6 +6,7 @@ import { useGoalComments } from '@/hooks/useGoalComments';
 import { shortNpub } from '@/lib/ndk';
 import { formatRelativeTime } from '@/lib/nostrHelpers';
 import { CreateCommentForm } from './CreateCommentForm';
+import { ScrollArea } from '@/components/ui/scroll-area';
 
 interface GoalCommentsProps {
   goalEventId: string;
@@ -39,7 +40,8 @@ export function GoalComments({ goalEventId, goalAuthorPubkey }: GoalCommentsProp
         )}
 
         {/* Comments Feed */}
-        <div className="space-y-3 max-h-[600px] overflow-y-auto">
+        <ScrollArea className="h-[400px] pr-2">
+          <div className="space-y-3">
           {sortedComments.map((comment) => {
             const authorProfile = allProfiles[comment.authorPubkey];
             
@@ -72,14 +74,15 @@ export function GoalComments({ goalEventId, goalAuthorPubkey }: GoalCommentsProp
               </div>
             );
           })}
-          
+
           {comments.length === 0 && (
             <div className="text-center py-12 text-muted-foreground">
               <MessageSquare className="w-12 h-12 mx-auto mb-3 opacity-50" />
               <p>No comments yet. {isLoggedIn ? 'Be the first!' : 'Log in to comment!'}</p>
             </div>
           )}
-        </div>
+          </div>
+        </ScrollArea>
       </CardContent>
     </Card>
   );
