@@ -195,6 +195,7 @@ export const useGoalsSubscription = (
           });
         }
         if (zap) {
+          console.log("inside here...")
           dispatch(addZap(zap));
           if (zap.targetEventId) {
             zapsByGoalCount[zap.targetEventId] = (zapsByGoalCount[zap.targetEventId] || 0) + 1;

@@ -34,6 +34,7 @@ const Index = () => {
   const { totalPages, goals, filteredGoalsCount } = useGoalsDisplay(
     allGoals,
     frozenGoals,
+    backgroundLoading,
     currentPage,
     filter,
     sort,

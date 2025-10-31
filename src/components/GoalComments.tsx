@@ -40,7 +40,7 @@ export function GoalComments({ goalEventId, goalAuthorPubkey }: GoalCommentsProp
         )}
 
         {/* Comments Feed */}
-        <ScrollArea className="h-[400px] pr-2">
+        <ScrollArea className="h-[300px] pr-2">
           <div className="space-y-3">
           {sortedComments.map((comment) => {
             const authorProfile = allProfiles[comment.authorPubkey];

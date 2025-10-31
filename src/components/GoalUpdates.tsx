@@ -21,7 +21,6 @@ export const GoalUpdates = ({ goalEventId, onCreateUpdate, isGoalAuthor }: GoalU
     return goal?.authorPubkey || '';
   });
 
-  console.log("hello")
   const updates = useGoalUpdates(goalEventId, authorPubkey);
   const profiles = useAppSelector((state) => state.profiles.profiles);
 
@@ -38,10 +37,9 @@ export const GoalUpdates = ({ goalEventId, onCreateUpdate, isGoalAuthor }: GoalU
           )}
         </div>
       </CardHeader>
-      <ScrollArea className="h-[400px] pr-2">
-
-        <CardContent>
-          <div className="space-y-4 max-h-[500px] overflow-y-auto">
+      <CardContent>
+        <ScrollArea className="h-[300px] pr-2">
+          <div className="space-y-4">
             {updates
               .sort((a, b) => b.createdAt - a.createdAt)
               .map((update) => {
@@ -81,8 +79,8 @@ export const GoalUpdates = ({ goalEventId, onCreateUpdate, isGoalAuthor }: GoalU
               </div>
             )}
           </div>
-        </CardContent>
-      </ScrollArea>
+        </ScrollArea>
+      </CardContent>
     </Card>
   );
 };

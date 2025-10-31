@@ -16,6 +16,7 @@ interface UseGoalsDisplayResult {
 export const useGoalsDisplay = (
   allGoals: EnrichedGoal[],
   frozenGoals: EnrichedGoal[],
+  backgroundLoading: boolean,
   currentPage: number,
   filter: FilterType,
   sort: SortType,
@@ -23,7 +24,10 @@ export const useGoalsDisplay = (
   searchQuery: string = ''
 ): UseGoalsDisplayResult => {
   return useMemo(() => {
-    const goalsToDisplay = frozenGoals.length > 0 ? frozenGoals : allGoals;
+    // Use the frozen snapshot only while background loading is active.
+    // Once loading completes, switch to the live list so late-arriving
+    // goals are included in search/sort/pagination.
+    const goalsToDisplay = backgroundLoading && frozenGoals.length > 0 ? frozenGoals : allGoals;
     const filtered = filterGoals(goalsToDisplay, filter, searchQuery);
     const sorted = sortGoals(filtered, sort, sortDirection);
 
@@ -38,5 +42,5 @@ export const useGoalsDisplay = (
       totalGoalsCount: goalsToDisplay.length,
       filteredGoalsCount: sorted.length,
     };
-  }, [frozenGoals, allGoals, currentPage, filter, sort, sortDirection, searchQuery]);
+  }, [frozenGoals, allGoals, backgroundLoading, currentPage, filter, sort, sortDirection, searchQuery]);
 };
